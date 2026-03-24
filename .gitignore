@@ -1,0 +1,50 @@
+# Secrets and local overrides
+litellm.env
+*.env
+*.env.*
+!.env.example
+!*.env.example
+.claude/settings.local.json
+**/.claude/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+
+# Git internals
+.git/
+
+# Runtime state, history, and caches
+backups/
+cache/
+debug/
+file-history/
+history.jsonl
+homunculus/
+ide/
+metrics/
+paste-cache/
+plans/
+projects/
+session-env/
+sessions/
+shell-snapshots/
+stats-cache.json
+statsig/
+tasks/
+telemetry/
+todos/
+
+# Local plugin installation state
+plugins/blocklist.json
+plugins/cache/
+plugins/data/
+plugins/install-counts-cache.json
+plugins/installed_plugins.json
+plugins/known_marketplaces.json
+plugins/marketplaces/
+
+# Embedded local repos or vendored worktrees
+**/.git/
+
+# OS/editor noise
+.DS_Store
