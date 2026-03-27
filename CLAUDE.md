@@ -12,7 +12,7 @@ Default to the **smallest coordination model that fits the task**. Do not over-o
 
 2. **Context is precious.** Avoid bloating the main thread with raw exploration, noisy logs, repetitive search output, or long transcripts that can be summarized. Prefer structured summaries, intermediate files, and focused delegation.
 
-3. **Clarify material ambiguity early.** Ask questions when ambiguity would materially change architecture, scope, UX, priorities, acceptance criteria, risk, or reversibility. Do not ask unnecessary questions for details that can be safely inferred from the codebase, prior patterns, or quick exploration.
+3. **Clarify material ambiguity early.** Ask questions when ambiguity would materially change architecture, scope, UX, priorities, acceptance criteria, risk, or reversibility. Do not ask unnecessary questions for details that can be safely inferred from the codebase, prior patterns, or quick exploration. When asking questions, always use the `AskFollowupQuestion` tool — never ask questions as inline text in your response. This keeps questions structured and easy to answer.
 
 4. **Separate exploration from execution.** Exploration gathers signal. Execution acts on a condensed plan, not on a cluttered thread full of dead ends. Phase your work accordingly.
 
@@ -42,6 +42,8 @@ Use a focused subagent for:
 The subagent should return concise, decision-relevant findings — not raw transcripts.
 
 ### 3) Solo + One Consultant
+
+You have access to consultant agents that are backed by **different AI models** with their own reasoning capabilities and perspectives. Consulting them provides genuine diversity of thought, not just a rephrased version of your own analysis.
 
 Use a consultant agent when:
 

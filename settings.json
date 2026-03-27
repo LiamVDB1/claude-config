@@ -10,6 +10,9 @@
     "ECC_HOOK_PROFILE": "standard",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
+  "attribution": {
+    "commit": ""
+  },
   "permissions": {
     "allow": [
       "Edit",
@@ -17,14 +20,12 @@
       "Skill",
       "WebSearch",
       "WebFetch",
-
       "mcp__plugin_figma_figma__get_metadata",
       "mcp__plugin_figma_figma__get_screenshot",
       "mcp__plugin_figma_figma__get_design_context",
       "mcp__context7__resolve-library-id",
       "mcp__context7__query-docs",
       "mcp__pencil",
-
       "Bash(git status *)",
       "Bash(git diff *)",
       "Bash(git log *)",
@@ -36,7 +37,6 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git push *)",
-
       "Bash(ls *)",
       "Bash(pwd)",
       "Bash(find *)",
@@ -45,7 +45,6 @@
       "Bash(which *)",
       "Bash(mdls *)",
       "Bash(pdftotext *)",
-
       "Bash(pytest *)",
       "Bash(.venv/bin/pytest *)",
       "Bash(.venv/bin/python -m pytest *)",
@@ -56,7 +55,6 @@
       "Bash(npm run build *)",
       "Bash(pnpm test *)",
       "Bash(pnpm build *)",
-
       "Bash(gh auth status *)",
       "Bash(gh pr view *)",
       "Bash(gh pr diff *)",
@@ -66,7 +64,6 @@
       "Bash(gh issue view *)",
       "Bash(gh issue list *)",
       "Bash(gh repo view *)",
-
       "Bash(docker compose ps *)",
       "Bash(docker compose ls *)",
       "Bash(docker compose logs *)",
@@ -75,9 +72,7 @@
       "Bash(docker ps *)",
       "Bash(docker images *)",
       "Bash(docker stats *)",
-
       "Bash(mgrep *)",
-
       "Bash(* --help *)",
       "Bash(* --version)"
     ],
@@ -89,32 +84,11 @@
       "Read(~/.aws/**)",
       "Read(~/.config/gh/**)",
       "Read(~/.npmrc)",
-      "Read(~/.claude/**)",
-
       "Bash(curl *)",
       "Bash(wget *)",
       "Bash(rm -rf *)"
-    ]
-  },
-  "sandbox": {
-    "enabled": true,
-    "autoAllowBashIfSandboxed": true,
-    "excludedCommands": ["docker"],
-    "filesystem": {
-      "denyRead": [
-        "~/.ssh",
-        "~/.aws",
-        "~/.config/gh",
-        "~/.npmrc",
-        "~/.claude"
-      ]
-    },
-    "network": {
-      "allowUnixSockets": [
-        "/var/run/docker.sock"
-      ],
-      "allowLocalBinding": true
-    }
+    ],
+    "defaultMode": "auto"
   },
   "statusLine": {
     "type": "command",
@@ -122,11 +96,11 @@
   },
   "enabledPlugins": {
     "mgrep@Mixedbread-Grep": true,
-    "everything-claude-code@everything-claude-code": true,
+    "everything-claude-code@everything-claude-code": false,
     "clangd-lsp@claude-plugins-official": true,
     "figma@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": false,
     "code-review@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
@@ -143,9 +117,29 @@
       }
     }
   },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "network": {
+      "allowUnixSockets": [
+        "/var/run/docker.sock"
+      ],
+      "allowLocalBinding": true
+    },
+    "filesystem": {
+      "denyRead": [
+        "~/.ssh",
+        "~/.aws",
+        "~/.config/gh",
+        "~/.npmrc",
+        "~/.claude"
+      ]
+    },
+    "excludedCommands": [
+      "docker"
+    ]
+  },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
-  "attribution": {
-    "commit": ""
-  }
+  "autoDreamEnabled": true
 }
