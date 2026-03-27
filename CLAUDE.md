@@ -43,7 +43,7 @@ The subagent should return concise, decision-relevant findings — not raw trans
 
 ### 3) Solo + One Consultant
 
-You have access to consultant agents that are backed by **different AI models** with their own reasoning capabilities and perspectives. Consulting them provides genuine diversity of thought, not just a rephrased version of your own analysis.
+You have access to consultant agents backed by **different AI models** with their own reasoning capabilities. Consulting them provides genuine diversity of thought.
 
 Use a consultant agent when:
 
@@ -63,7 +63,7 @@ Use multiple subagents only when workstreams are clearly independent:
 - internal repo research / external docs research
 - implementation / verification
 
-Each subagent gets a sharply scoped mission. They should not duplicate each other.
+Each subagent gets a sharply scoped mission. They should not duplicate each other. See `dispatching-parallel-agents` skill for the full pattern.
 
 ### 5) Agent Teams
 
@@ -129,7 +129,11 @@ Compact at logical phase boundaries:
 4. Preserve the next-step plan
 5. Then suggest `/compact` to the user
 
-> **Note:** You cannot trigger `/compact` programmatically. Suggest it to the user at the right moment. The `suggest-compact` hook will also nudge after extended tool usage.
+> **Note:** You cannot trigger `/compact` programmatically. Suggest it to the user at the right moment. The `suggest-compact` hook will also nudge after extended Edit/Write usage.
+
+### Context Budget
+
+Run `/context-budget` when the session feels sluggish, after adding new tools, or before starting context-heavy work. It audits token overhead across all loaded components and surfaces actionable optimizations.
 
 ---
 
@@ -209,10 +213,17 @@ Maintain a lightweight session state file when work is multi-phase, likely to sp
 
 Use the available memory tools with discipline. Persist only what is likely to matter again.
 
-### Available Tools
+### Continuous Learning
 
-- **`continuous-learning-v2`** — Instinct-based system that captures patterns from sessions and stores them as confidence-weighted instincts in `~/.claude/homunculus/`. Use `/instinct-status` to review, `/evolve` to cluster into skills.
-- **Project `MEMORY.md`** — Per-project persistent memory. Use for project-specific conventions, architecture notes, known pitfalls, and stable preferences.
+The `continuous-learning-v2` skill captures patterns from Edit/Write operations and stores them as confidence-weighted instincts in `~/.claude/homunculus/`.
+
+- `/instinct-status` — review captured instincts
+- `/evolve` — cluster instincts into reusable skills
+- `/promote` — move project-level instincts to global
+
+### Project Memory
+
+- **Project `MEMORY.md`** — Per-project persistent memory for conventions, architecture notes, known pitfalls, and stable preferences.
 - **`~/.claude/skills/learned/`** — Extracted skills from past sessions. Referenced automatically when relevant.
 
 ### What to persist
@@ -236,14 +247,137 @@ Use the available memory tools with discipline. Persist only what is likely to m
 ### Planning
 
 - Use plan mode for complex, ambiguous, risky, or work that benefits from explicit staging
+- For complex features, use the `brainstorming` skill to explore design before implementation — it enforces a design-first gate
+- For multi-session projects, use `blueprint` to break work into cold-start-executable steps
 - For simpler tasks, proceed directly without forcing a planning phase
 - Write intermediate outputs to files when they reduce context pressure or clarify handoffs
 
+### Implementation
+
+- For features and bug fixes, prefer the `test-driven-development` skill — write the failing test first, then implement
+- For plans with independent tasks, use `subagent-driven-development` — one fresh subagent per task, two-stage review (spec compliance, then quality)
+- For research-heavy work, use `search-first` before writing code — check existing patterns, docs, and prior art
+
 ### Verification
 
-- After multi-file changes, run the project's test, lint, and build commands
+- After multi-file changes, run the project's test, lint, and build commands — or use `/verify` for the full `verification-loop`
 - For cross-cutting, security-sensitive, or hard-to-reverse changes, use a separate verification pass or review subagent
 - For simple, low-risk changes, inline verification is sufficient — do not add ceremony
+
+---
+
+## Available Agents
+
+### Specialist Agents
+
+| Agent | Purpose | When to use |
+|-------|---------|-------------|
+| `planner` | Phased planning with dependency analysis | Complex features, architecture changes |
+| `code-reviewer` | Review with confidence-based issue filtering | Pre-PR quality gate, code audit |
+| `build-error-resolver` | Minimal-diff build/type error fixing | Get the build green without architectural changes |
+| `security-reviewer` | Focused security review | Auth, input handling, secrets, injection risks |
+
+### Consultant Agents (Different AI Models)
+
+| Agent | Model | Use for |
+|-------|-------|---------|
+| `glm-consult` | GLM | Architecture review, alternative perspectives |
+| `kimi-consult` | Kimi | Problem-solving, debugging approaches |
+| `minimax-m2-consult` | MiniMax | Design decisions, risk analysis |
+
+### Worker Agents
+
+| Agent | Model | Use for |
+|-------|-------|---------|
+| `default-code-worker` | Haiku | Routine subagent tasks, discovery, file search |
+| `glm-worker` | GLM | Cost-effective exploration, bounded tasks |
+| `kimi-worker` | Kimi | Alternative implementation perspective |
+| `minimax-m2-worker` | MiniMax | Cost-effective bounded tasks |
+
+---
+
+## Available Skills
+
+Skills are loaded by name+description only (~50 tokens each). The full skill body is read on-demand when triggered.
+
+### Core Workflow Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `strategic-compact` | Suggest `/compact` at logical phase boundaries |
+| `verification-loop` | Build → types → lint → test → security → diff |
+| `brainstorming` | Design-first exploration before implementation |
+| `test-driven-development` | Red-green-refactor with iron law enforcement |
+| `subagent-driven-development` | Execute plans via fresh subagent per task |
+| `dispatching-parallel-agents` | Parallel agent dispatch for independent problems |
+| `blueprint` | Multi-session project plans with cold-start briefs |
+| `codebase-onboarding` | Analyze unfamiliar codebase, generate onboarding guide |
+| `iterative-retrieval` | Progressive context discovery for subagent workflows |
+| `search-first` | Research-before-coding workflow |
+| `continuous-learning-v2` | Instinct-based pattern capture and evolution |
+| `context-budget` | Audit token overhead across all loaded components |
+
+### Reference Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `security-review` | Comprehensive security checklist and patterns |
+| `architecture-decision-records` | Structured ADR capture with lifecycle management |
+| `rules-distill` | Auto-extract cross-cutting principles into rules |
+| `skill-stocktake` | Audit installed skills for quality and overlap |
+| `eval-harness` | Eval-driven development with pass@k metrics |
+| `autonomous-loops` | Loop patterns: sequential, continuous-PR, DAG |
+| `agent-harness-construction` | Action space design, error recovery contracts |
+| `cost-aware-llm-pipeline` | Model routing, cost tracking, retry patterns |
+| `team-builder` | Dynamic agent team composition and dispatch |
+| `data-scraper-agent` | Automated data collection workflows |
+| `skill-comply` | Measure whether agents actually follow skills/rules |
+| `agentic-engineering` | Eval-first engineering principles |
+| `frontend-slides` | Zero-dependency HTML presentation builder |
+| `tdd-workflow` | Lightweight TDD workflow (complement to full TDD skill) |
+
+### Custom Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `gemini-delegate` | Delegate to Gemini for model-diversity feedback |
+| `docs_researcher` | Verify framework behavior against primary docs |
+| `observer` | Monitor long-running tasks, diagnose runtime failures |
+| `humanizer` | Refine AI-generated text for natural tone |
+| `gh-address-comments` | Address GitHub PR review comments |
+| `gh-fix-ci` | Fix CI failures from GitHub Actions |
+
+### ECC Library (Niche Skills Archive)
+
+Use the `ecc-library` skill to search ~100 additional domain-specific skills in the ECC plugin cache. These are **not loaded** — zero token overhead. Search when you need capabilities like Django patterns, Flutter review, Docker patterns, market research, video editing, etc.
+
+---
+
+## Slash Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/save-session` | Persist current session state |
+| `/resume-session` | Restore previous session state |
+| `/verify` | Run verification loop |
+| `/plan` | Trigger planning workflow |
+| `/code-review` | On-demand code review |
+| `/instinct-status` | View continuous-learning instincts |
+| `/evolve` | Evolve instincts into skills |
+| `/promote` | Promote project instincts to global |
+| `/checkpoint` | Quick checkpoint during long work |
+
+---
+
+## Active Hooks
+
+Three lean hooks run on mutation events only:
+
+1. **`suggest-compact`** — Counts Edit/Write calls, suggests `/compact` at intervals
+2. **`continuous-learning-v2 observer`** — Captures Edit/Write patterns for instinct extraction (async, 10s timeout)
+3. **`pre-compact` state save** — Saves session state before context compaction
+
+No hooks fire on Read, Grep, Glob, or other non-mutating operations.
 
 ---
 
@@ -256,6 +390,8 @@ Avoid these specific failure modes:
 - **Compacting mid-phase.** Always compact at phase boundaries, not in the middle of active reasoning.
 - **Keeping raw exploration in the main thread.** Delegate noisy search to subagents. Keep the main thread clean for synthesis and action.
 - **Mistaking more orchestration for more intelligence.** The goal is maximum useful progress, not maximum agent activity.
+- **Skipping the design gate.** For non-trivial features, brainstorm and plan before coding. For all features and bug fixes, write the test first.
+- **Ignoring available skills.** Check the skill inventory above before reinventing a workflow. Use `/context-budget` to monitor overhead.
 
 ---
 

@@ -103,6 +103,49 @@
     "superpowers@claude-plugins-official": false,
     "code-review@claude-plugins-official": false
   },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/run-with-flags.js suggest-compact scripts/hooks/suggest-compact.js standard,strict"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/run-with-flags-shell.sh continuous-learning-v2-observe-pre skills/continuous-learning-v2/hooks/observe.sh standard,strict pre",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/run-with-flags-shell.sh continuous-learning-v2-observe-post skills/continuous-learning-v2/hooks/observe.sh standard,strict post",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/pre-compact.js"
+          }
+        ]
+      }
+    ]
+  },
   "extraKnownMarketplaces": {
     "Mixedbread-Grep": {
       "source": {
