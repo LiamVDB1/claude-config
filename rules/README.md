@@ -16,8 +16,6 @@ rules/
 │   └── security.md
 ├── typescript/      # TypeScript/JavaScript specific
 ├── python/          # Python specific
-├── golang/          # Go specific
-├── swift/           # Swift specific
 └── php/             # PHP specific
 ```
 
