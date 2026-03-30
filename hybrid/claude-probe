@@ -1,0 +1,5 @@
+#!/bin/bash
+# Diagnostic launcher — wraps claude with the fetch probe preload.
+# See probe.js for interpretation of the log output.
+export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--require $HOME/.claude/hybrid/probe.js"
+exec claude "$@"
