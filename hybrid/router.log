@@ -1,0 +1,762 @@
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+CONNECT  | raw socket accepted
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+STARTED  | pid=88459 socket=/var/folders/91/mnw524qs273431fgr049j_p80000gn/T//claude-hybrid-88454.sock litellm=https://litellm.juphorizon.com
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+SECURE   | tls handshake completed
+CONNECT  | raw socket accepted
+ARRIVED  | POST /v1/messages?beta=true
+CONNECT  | raw socket accepted
+ARRIVED  | POST /v1/messages?beta=true
+SECURE   | tls handshake completed
+SECURE   | tls handshake completed
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+ARRIVED  | POST /v1/messages?beta=true
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+STARTED  | pid=91962 socket=/var/folders/91/mnw524qs273431fgr049j_p80000gn/T//claude-hybrid-91957.sock litellm=https://litellm.juphorizon.com
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+STARTED  | pid=92525 socket=/var/folders/91/mnw524qs273431fgr049j_p80000gn/T//claude-hybrid-92520.sock litellm=https://litellm.juphorizon.com
+STARTED  | pid=92953 socket=/var/folders/91/mnw524qs273431fgr049j_p80000gn/T//claude-hybrid-92948.sock litellm=https://litellm.juphorizon.com
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+NATIVE    | model=claude-haiku-4-5-20251001 | path=/v1/messages?beta=true
+UPSOCK   | POST https://api.anthropic.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages/count_tokens?beta=true
+REJECT    | path=/v1/messages/count_tokens?beta=true | reason=unsupported path
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4-mini -> gpt-5.4-mini -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages
+CONNECT  | raw socket accepted
+SECURE   | tls handshake completed
+ARRIVED  | POST /v1/messages?beta=true
+REROUTE   | model=gpt-5.4 -> gpt-5.4 -> https://litellm.juphorizon.com/v1/messages
+UPSOCK   | POST https://litellm.juphorizon.com/v1/messages

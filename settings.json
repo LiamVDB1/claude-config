@@ -1,14 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "apiKeyHelper": "~/.claude/scripts/get-litellm-key.sh",
   "env": {
-    "ANTHROPIC_BASE_URL": "https://litellm.juphorizon.com",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "gpt-5.4",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "gpt-5.4",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gpt-5.4-mini",
-    "CLAUDE_CODE_SUBAGENT_MODEL": "gpt-5.4-mini",
-    "ECC_HOOK_PROFILE": "standard",
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "ANTHROPIC_CUSTOM_MODEL_OPTION": "gpt-5.4",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GPT-5.4",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION": "Routed through local hybrid router",
+    "ECC_HOOK_PROFILE": "standard"
   },
   "attribution": {
     "commit": ""
@@ -92,6 +88,7 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "gpt-5.4",
   "hooks": {
     "PreToolUse": [
       {
@@ -186,5 +183,6 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
-  "autoDreamEnabled": true
+  "autoDreamEnabled": true,
+  "skipAutoPermissionPrompt": true
 }
