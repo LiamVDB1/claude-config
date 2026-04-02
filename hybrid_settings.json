@@ -4,7 +4,6 @@
     "ANTHROPIC_CUSTOM_MODEL_OPTION": "gpt-5.4",
     "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GPT-5.4",
     "ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION": "Routed through local hybrid router",
-    "CLAUDE_CODE_SUBAGENT_MODEL": "gpt-5.4-mini",
     "ECC_HOOK_PROFILE": "standard"
   },
   "attribution": {
@@ -12,7 +11,6 @@
   },
   "permissions": {
     "allow": [
-      "Read(~/.claude/ORCHESTRATOR.md)",
       "Edit",
       "Write",
       "Skill",
@@ -90,15 +88,15 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus",
+  "model": "gpt-5.4",
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|Read",
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/run-with-flags.js suggest-compact hooks/suggest-compact.js standard,strict"
+            "command": "node ~/.claude/hooks/run-with-flags.js suggest-compact scripts/hooks/suggest-compact.js standard,strict"
           },
           {
             "type": "command",
@@ -111,7 +109,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write|Read",
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
@@ -145,12 +143,7 @@
     "frontend-design@claude-plugins-official": true,
     "superpowers@claude-plugins-official": false,
     "code-review@claude-plugins-official": false,
-    "colgrep@lightonai-colgrep": true,
-    "huggingface-skills@claude-plugins-official": false,
-    "code-simplifier@claude-plugins-official": false,
-    "ralph-loop@claude-plugins-official": false,
-    "claude-md-management@claude-plugins-official": false,
-    "claude-code-setup@claude-plugins-official": true
+    "colgrep@lightonai-colgrep": true
   },
   "extraKnownMarketplaces": {
     "everything-claude-code": {

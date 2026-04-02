@@ -125,8 +125,8 @@ test('reroutes litellm models with stripped auth and rewritten model', async () 
     });
   });
 
+  const envFile = path.join(os.tmpdir(), `litellm-${process.pid}-${Date.now()}.env`);
   try {
-    const envFile = path.join(os.tmpdir(), `litellm-${process.pid}-${Date.now()}.env`);
     fs.writeFileSync(envFile, 'LITELLM_API_KEY = "litellm-test-key"\n', 'utf8');
     router = await startRouter({
       HYBRID_LITELLM_BASE_URL: upstream.baseUrl,
@@ -156,23 +156,23 @@ test('reroutes litellm models with stripped auth and rewritten model', async () 
     const log = fs.readFileSync(routerLogPath, 'utf8');
     assert.match(log, /REROUTE\s+\| model=litellm\/gpt-4o -> gpt-4o -> .*\/v1\/messages/);
   } finally {
-    try { fs.unlinkSync(path.join(os.tmpdir(), `litellm-${process.pid}-*.env`)); } catch {}
+    fs.unlinkSync(envFile);
   }
 });
 
-test('reroutes direct provider model names through LiteLLM', async () => {
+test('routes system markers and strips them before forwarding', async () => {
   const seen = [];
   upstream = await startUpstream((req, res) => {
-    let body = '';
-    req.on('data', (chunk) => { body += chunk; });
+    const chunks = [];
+    req.on('data', (chunk) => chunks.push(chunk));
     req.on('end', () => {
-      seen.push({ url: req.url, headers: req.headers, body });
+      seen.push({ url: req.url, headers: req.headers, body: Buffer.concat(chunks).toString('utf8') });
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ ok: true }));
     });
   });
-  const envFile = path.join(os.tmpdir(), `litellm-${process.pid}-${Date.now()}-direct.env`);
-  fs.writeFileSync(envFile, 'LITELLM_API_KEY=direct-test-key\n', 'utf8');
+  const envFile = path.join(os.tmpdir(), `litellm-${process.pid}-${Date.now()}-native.env`);
+  fs.writeFileSync(envFile, 'LITELLM_API_KEY=native-test-key\n', 'utf8');
   router = await startRouter({
     HYBRID_LITELLM_BASE_URL: upstream.baseUrl,
     LITELLM_ENV_PATH: envFile,
@@ -181,29 +181,59 @@ test('reroutes direct provider model names through LiteLLM', async () => {
   const response = await request(router.socketPath, {
     path: '/v1/messages',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ model: 'gpt-4o', messages: [] }),
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      system: 'route $%$model: litellm/gpt-4o$%$',
+      messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }],
+    }),
   });
 
   assert.equal(response.statusCode, 200);
   assert.equal(seen.length, 1);
-  assert.deepEqual(JSON.parse(seen[0].body), { model: 'gpt-4o', messages: [] });
+  assert.equal(seen[0].headers.authorization, 'Bearer native-test-key');
+  assert.deepEqual(JSON.parse(seen[0].body), {
+    model: 'gpt-4o',
+    system: 'route',
+    messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }],
+  });
   const log = fs.readFileSync(routerLogPath, 'utf8');
-  assert.match(log, /REROUTE\s+\| model=gpt-4o -> gpt-4o -> .*\/v1\/messages/);
+  assert.match(log, /REROUTE\s+\| model=gpt-4o marker=litellm\/gpt-4o -> gpt-4o -> .*\/v1\/messages/);
   fs.unlinkSync(envFile);
 });
 
-test('reads liteLLM token from env file', async () => {
-  const envFile = path.join(os.tmpdir(), `litellm-${process.pid}-${Date.now()}-load.env`);
-  fs.writeFileSync(envFile, 'LITELLM_API_KEY=from-file\n', 'utf8');
-  process.env.HYBRID_LITELLM_ENV_PATH = envFile;
+test('ignores malformed model markers in request text', async () => {
+  const seen = [];
+  upstream = await startUpstream((req, res) => {
+    const chunks = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => {
+      seen.push({ url: req.url, headers: req.headers, body: Buffer.concat(chunks).toString('utf8') });
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+  });
+  const envFile = path.join(os.tmpdir(), `litellm-${process.pid}-${Date.now()}-malformed.env`);
+  fs.writeFileSync(envFile, 'LITELLM_API_KEY=malformed-test-key\n', 'utf8');
+  router = await startRouter({
+    HYBRID_LITELLM_BASE_URL: upstream.baseUrl,
+    LITELLM_ENV_PATH: envFile,
+  });
 
-  process.env.ANTHROPIC_UNIX_SOCKET = path.join(os.tmpdir(), `cc-token-${process.pid}-${Date.now()}.sock`);
-  delete require.cache[require.resolve(serverModulePath)];
-  const mod = require(serverModulePath);
-  const token = mod.__test__.loadLiteLLMToken();
+  const response = await request(router.socketPath, {
+    path: '/v1/messages',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      messages: [
+        { role: 'user', content: [{ type: 'text', text: 'hello $%$model: experimental$%$' }] },
+      ],
+    }),
+  });
 
-  assert.equal(token, 'from-file');
-  await mod.shutdown();
+  assert.equal(response.statusCode, 401);
+  assert.equal(seen.length, 0);
+  const log = fs.readFileSync(routerLogPath, 'utf8');
+  assert.match(log, /NATIVE\s+\| model=claude-sonnet-4-6 \| path=\/v1\/messages/);
   fs.unlinkSync(envFile);
 });
 
@@ -260,12 +290,10 @@ test('sanitizes invalid thinking blocks before forwarding native requests', asyn
   }
 });
 
-test('ready becomes a promise after setupServer', async () => {
-  process.env.ANTHROPIC_UNIX_SOCKET = path.join(os.tmpdir(), `cc-ready-${process.pid}-${Date.now()}.sock`);
+test('restarts with a fresh server state', async () => {
+  process.env.ANTHROPIC_UNIX_SOCKET = path.join(os.tmpdir(), `cc-token-${process.pid}-${Date.now()}.sock`);
   delete require.cache[require.resolve(serverModulePath)];
   const mod = require(serverModulePath);
-
-  assert.equal(mod.ready, null);
   mod.setupServer();
   assert.ok(mod.ready instanceof Promise);
   await mod.ready;

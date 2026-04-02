@@ -483,12 +483,34 @@ Before ANY production deployment:
 - [ ] **File Uploads**: Validated (size, type)
 - [ ] **Wallet Signatures**: Verified (if blockchain)
 
+### 11. Cloud & Infrastructure Security (when applicable)
+
+Use this as a small add-on when the work touches cloud infrastructure, IAM, deployment pipelines, or edge/CDN configuration.
+
+#### Verification Steps
+- [ ] Privileged accounts protected with MFA; no routine root account use
+- [ ] IAM roles and CI/CD permissions follow least privilege
+- [ ] Secrets stored in platform/cloud secret managers with rotation where supported
+- [ ] Databases and internal services are not publicly exposed by default
+- [ ] Security logging, alerting, and retention configured for critical services
+- [ ] CI/CD uses short-lived credentials or OIDC instead of long-lived tokens
+- [ ] WAF / edge protections / rate limits enabled when internet-facing
+- [ ] Backups and recovery settings match the system's risk and compliance needs
+
+#### Common Misconfigurations to Check
+- [ ] Public buckets, databases, or admin endpoints
+- [ ] Wildcard IAM permissions (`*`) where scoped permissions are possible
+- [ ] Long-lived deploy credentials stored in CI
+- [ ] Missing audit logs for privileged actions or secret access
+
 ## Resources
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Next.js Security](https://nextjs.org/docs/security)
 - [Supabase Security](https://supabase.com/docs/guides/auth)
 - [Web Security Academy](https://portswigger.net/web-security)
+- [AWS Security Best Practices](https://aws.amazon.com/security/best-practices/)
+- [OWASP Cloud Security](https://owasp.org/www-project-cloud-security/)
 
 ---
 

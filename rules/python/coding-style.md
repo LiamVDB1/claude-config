@@ -7,6 +7,14 @@ paths:
 
 > This file extends [common/coding-style.md](../common/coding-style.md) with Python specific content.
 
+## Virtual Environment
+
+Always prefer `.venv` when present:
+
+- Before running any Python command (`python`, `pip`, `pytest`, `ruff`, etc.), check if a `.venv` directory exists in the project root.
+- If `.venv` exists, use `.venv/bin/python` (or `.venv/Scripts/python` on Windows) instead of the system `python`.
+- Activate via `source .venv/bin/activate` or invoke binaries directly from `.venv/bin/`.
+
 ## Standards
 
 - Follow **PEP 8** conventions
@@ -37,6 +45,6 @@ class Point(NamedTuple):
 - **isort** for import sorting
 - **ruff** for linting
 
-## Reference
+## Testing
 
-See skill: `python-patterns` for comprehensive Python idioms and patterns.
+Use **pytest** as the testing framework. Categorize with `pytest.mark` (unit, integration).

@@ -336,8 +336,21 @@ Before marking work complete:
 - [ ] Output pristine (no errors, warnings)
 - [ ] Tests use real code (mocks only if unavoidable)
 - [ ] Edge cases and errors covered
+- [ ] Coverage is adequate for the change (unit, integration, and E2E where applicable)
 
 Can't check all boxes? You skipped TDD. Start over.
+
+## Coverage Expectations
+
+Choose the smallest useful test mix for the change, but cover the boundary where the behavior lives:
+
+- **Unit tests** for pure functions, helpers, parsing, validation, and isolated component logic
+- **Integration tests** for API endpoints, database operations, service boundaries, and framework wiring
+- **E2E tests** for critical user flows or regressions that only show up in the full system
+
+Use all three only when the change genuinely spans all three layers. Do not add ceremonial E2E coverage for low-level logic.
+
+A good default target is strong coverage of happy path, edge cases, and error paths for the layer you changed.
 
 ## When Stuck
 

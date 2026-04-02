@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { isHookEnabled } = require('../lib/hook-flags');
+const { isHookEnabled } = require('./lib/hook-flags');
 
 const MAX_STDIN = 1024 * 1024;
 
@@ -34,7 +34,7 @@ function getPluginRoot() {
   if (process.env.CLAUDE_PLUGIN_ROOT && process.env.CLAUDE_PLUGIN_ROOT.trim()) {
     return process.env.CLAUDE_PLUGIN_ROOT;
   }
-  return path.resolve(__dirname, '..', '..');
+  return path.resolve(__dirname, '..');
 }
 
 async function main() {

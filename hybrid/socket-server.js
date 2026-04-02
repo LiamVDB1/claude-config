@@ -14,6 +14,14 @@ const LITELLM_BASE_URL = process.env.HYBRID_LITELLM_BASE_URL || 'https://litellm
 const LITELLM_ENV_PATH = process.env.HYBRID_LITELLM_ENV_PATH || path.join(process.env.HOME || '', '.claude', 'litellm.env');
 const ROUTER_LOG_PATH = path.join(process.env.HOME || '', '.claude', 'hybrid', 'router.log');
 const NATIVE_MODEL_PATTERNS = [/^claude-/i, /^anthropic\.claude-/i, /^claude$/i];
+const NATIVE_MODEL_ALIASES = {
+  opus: 'claude-opus-4-6',
+  sonnet: 'claude-sonnet-4-6',
+  haiku: 'claude-haiku-4-5-20251001',
+};
+const MODEL_MARKER_PATTERN = /\$%\$model:\s*([^\n$%]+?)\s*\$%\$/i;
+const MODEL_TARGET_PREFIXES = ['litellm/', 'native/'];
+const MARKER_REMOVAL_PATTERN = /\s*\$%\$model:\s*[^\n$%]+?\s*\$%\$/gi;
 
 const state = {
   server: null,
@@ -201,6 +209,62 @@ function sanitizeAnthropicMessages(messages) {
   });
 }
 
+function extractModelTarget(text) {
+  if (typeof text !== 'string') return null;
+  const match = text.match(MODEL_MARKER_PATTERN);
+  if (!match) return null;
+  const target = match[1].trim();
+  const lowerTarget = target.toLowerCase();
+  if (!MODEL_TARGET_PREFIXES.some((prefix) => lowerTarget.startsWith(prefix))) return null;
+  return target;
+}
+
+function stripModelMarker(text) {
+  if (typeof text !== 'string') return text;
+  return text.replace(MARKER_REMOVAL_PATTERN, '').trim();
+}
+
+function getSystemText(body) {
+  if (!body || typeof body !== 'object') return '';
+  if (typeof body.system === 'string') return body.system;
+  if (Array.isArray(body.system)) {
+    const parts = [];
+    for (const block of body.system) {
+      if (!block || typeof block !== 'object') continue;
+      if (typeof block.text === 'string') parts.push(block.text);
+      if (typeof block.content === 'string') parts.push(block.content);
+    }
+    return parts.join('\n');
+  }
+  return '';
+}
+
+function stripMarkerFromSystem(body) {
+  if (!body || typeof body !== 'object') return body;
+  if (typeof body.system === 'string') {
+    return { ...body, system: stripModelMarker(body.system) };
+  }
+  if (Array.isArray(body.system)) {
+    return {
+      ...body,
+      system: body.system.map((block) => {
+        if (!block || typeof block !== 'object') return block;
+        if (typeof block.text === 'string') return { ...block, text: stripModelMarker(block.text) };
+        return block;
+      }),
+    };
+  }
+  return body;
+}
+
+function applyModelMarker(body) {
+  const systemText = getSystemText(body);
+  const target = extractModelTarget(systemText);
+  if (!target) return { body, target: null };
+  const sanitizedBody = stripMarkerFromSystem(body);
+  return { body: sanitizedBody, target };
+}
+
 function performRequest(targetUrl, options, body) {
   const client = targetUrl.protocol === 'https:' ? https : http;
   return new Promise((resolve, reject) => {
@@ -308,7 +372,24 @@ async function handleMessages(req, res, body) {
     return forwardNative(req, res, body);
   }
 
-  const model = typeof parsed.body.model === 'string' ? parsed.body.model : '';
+  const markerResult = applyModelMarker(parsed.body);
+  const activeBody = markerResult.body;
+  const model = typeof activeBody.model === 'string' ? activeBody.model : '';
+  const markerTarget = markerResult.target;
+  const targetModel = markerTarget ? markerTarget.replace(/^(?:litellm|native)\//i, '') : null;
+
+  if (markerTarget) {
+    if (markerTarget.toLowerCase().startsWith('native/')) {
+      const resolvedModel = targetModel ? (NATIVE_MODEL_ALIASES[targetModel.toLowerCase()] || targetModel) : null;
+      const nativeBody = resolvedModel ? { ...activeBody, model: resolvedModel } : activeBody;
+      logRoutingDecision('NATIVE   ', `model=${model || '(empty)'} marker=${markerTarget} -> ${resolvedModel || '(empty)'} -> https://api.anthropic.com/v1/messages`);
+      return forwardNative(req, res, Buffer.from(JSON.stringify(nativeBody)));
+    }
+    const routedModel = `litellm/${targetModel}`;
+    logRoutingDecision('REROUTE  ', `model=${model || '(empty)'} marker=${markerTarget} -> ${targetModel || '(empty)'} -> ${LITELLM_BASE_URL}/v1/messages`);
+    return forwardLiteLLM(req, res, Buffer.from(JSON.stringify(activeBody)), routedModel);
+  }
+
   if (isNativeModel(model)) {
     logRoutingDecision('NATIVE   ', `model=${model || '(empty)'} | path=${req.url}`);
     return forwardNative(req, res, body);
