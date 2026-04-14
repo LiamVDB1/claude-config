@@ -20,8 +20,9 @@ const NATIVE_MODEL_ALIASES = {
   haiku: 'claude-haiku-4-5-20251001',
 };
 const MODEL_MARKER_PATTERN = /\$%\$model:\s*([^\n$%]+?)\s*\$%\$/i;
+const EFFORT_MARKER_PATTERN = /\$%\$effort:\s*(low|medium|high)\s*\$%\$/i;
 const MODEL_TARGET_PREFIXES = ['litellm/', 'native/'];
-const MARKER_REMOVAL_PATTERN = /\s*\$%\$model:\s*[^\n$%]+?\s*\$%\$/gi;
+const MARKER_REMOVAL_PATTERN = /\s*\$%\$(?:model|effort):\s*[^\n$%]+?\s*\$%\$/gi;
 
 const state = {
   server: null,
@@ -219,9 +220,59 @@ function extractModelTarget(text) {
   return target;
 }
 
-function stripModelMarker(text) {
+function extractEffortLevel(text) {
+  if (typeof text !== 'string') return null;
+  const match = text.match(EFFORT_MARKER_PATTERN);
+  if (!match) return null;
+  return match[1].trim().toLowerCase();
+}
+
+function stripSystemMarkers(text) {
   if (typeof text !== 'string') return text;
   return text.replace(MARKER_REMOVAL_PATTERN, '').trim();
+}
+
+function applyEffortLevel(body, effortLevel) {
+  if (!body || typeof body !== 'object' || !effortLevel) {
+    return body;
+  }
+
+  if (body.effort !== undefined || body.thinking !== undefined) {
+    return body;
+  }
+
+  return {
+    ...body,
+    effort: effortLevel,
+    thinking: { type: 'adaptive' },
+  };
+}
+
+function applySystemMarkers(body) {
+  const systemText = getSystemText(body);
+  return {
+    body: stripMarkersFromSystem(body),
+    target: extractModelTarget(systemText),
+    effortLevel: extractEffortLevel(systemText),
+  };
+}
+
+function stripMarkersFromSystem(body) {
+  if (!body || typeof body !== 'object') return body;
+  if (typeof body.system === 'string') {
+    return { ...body, system: stripSystemMarkers(body.system) };
+  }
+  if (Array.isArray(body.system)) {
+    return {
+      ...body,
+      system: body.system.map((block) => {
+        if (!block || typeof block !== 'object') return block;
+        if (typeof block.text === 'string') return { ...block, text: stripSystemMarkers(block.text) };
+        return block;
+      }),
+    };
+  }
+  return body;
 }
 
 function getSystemText(body) {
@@ -239,31 +290,6 @@ function getSystemText(body) {
   return '';
 }
 
-function stripMarkerFromSystem(body) {
-  if (!body || typeof body !== 'object') return body;
-  if (typeof body.system === 'string') {
-    return { ...body, system: stripModelMarker(body.system) };
-  }
-  if (Array.isArray(body.system)) {
-    return {
-      ...body,
-      system: body.system.map((block) => {
-        if (!block || typeof block !== 'object') return block;
-        if (typeof block.text === 'string') return { ...block, text: stripModelMarker(block.text) };
-        return block;
-      }),
-    };
-  }
-  return body;
-}
-
-function applyModelMarker(body) {
-  const systemText = getSystemText(body);
-  const target = extractModelTarget(systemText);
-  if (!target) return { body, target: null };
-  const sanitizedBody = stripMarkerFromSystem(body);
-  return { body: sanitizedBody, target };
-}
 
 function performRequest(targetUrl, options, body) {
   const client = targetUrl.protocol === 'https:' ? https : http;
@@ -372,41 +398,44 @@ async function handleMessages(req, res, body) {
     return forwardNative(req, res, body);
   }
 
-  const markerResult = applyModelMarker(parsed.body);
-  const activeBody = markerResult.body;
-  const model = typeof activeBody.model === 'string' ? activeBody.model : '';
+  const markerResult = applySystemMarkers(parsed.body);
+  const baseBody = markerResult.body;
+  const model = typeof baseBody.model === 'string' ? baseBody.model : '';
+  const bodyWithEffort = applyEffortLevel(baseBody, markerResult.effortLevel);
+  const routedBody = Buffer.from(JSON.stringify(bodyWithEffort));
   const markerTarget = markerResult.target;
   const targetModel = markerTarget ? markerTarget.replace(/^(?:litellm|native)\//i, '') : null;
+  const effortSuffix = markerResult.effortLevel ? ` effort=${markerResult.effortLevel}` : '';
 
   if (markerTarget) {
     if (markerTarget.toLowerCase().startsWith('native/')) {
       const resolvedModel = targetModel ? (NATIVE_MODEL_ALIASES[targetModel.toLowerCase()] || targetModel) : null;
-      const nativeBody = resolvedModel ? { ...activeBody, model: resolvedModel } : activeBody;
-      logRoutingDecision('NATIVE   ', `model=${model || '(empty)'} marker=${markerTarget} -> ${resolvedModel || '(empty)'} -> https://api.anthropic.com/v1/messages`);
+      const nativeBody = resolvedModel ? { ...bodyWithEffort, model: resolvedModel } : bodyWithEffort;
+      logRoutingDecision('NATIVE   ', `model=${model || '(empty)'} marker=${markerTarget}${effortSuffix} -> ${resolvedModel || '(empty)'} -> https://api.anthropic.com/v1/messages`);
       return forwardNative(req, res, Buffer.from(JSON.stringify(nativeBody)));
     }
     const routedModel = `litellm/${targetModel}`;
-    logRoutingDecision('REROUTE  ', `model=${model || '(empty)'} marker=${markerTarget} -> ${targetModel || '(empty)'} -> ${LITELLM_BASE_URL}/v1/messages`);
-    return forwardLiteLLM(req, res, Buffer.from(JSON.stringify(activeBody)), routedModel);
+    logRoutingDecision('REROUTE  ', `model=${model || '(empty)'} marker=${markerTarget}${effortSuffix} -> ${targetModel || '(empty)'} -> ${LITELLM_BASE_URL}/v1/messages`);
+    return forwardLiteLLM(req, res, routedBody, routedModel);
   }
 
   if (isNativeModel(model)) {
-    logRoutingDecision('NATIVE   ', `model=${model || '(empty)'} | path=${req.url}`);
-    return forwardNative(req, res, body);
+    logRoutingDecision('NATIVE   ', `model=${model || '(empty)'}${effortSuffix} | path=${req.url}`);
+    return forwardNative(req, res, routedBody);
   }
 
   if (model.toLowerCase().startsWith('litellm/')) {
-    logRoutingDecision('REROUTE  ', `model=${model} -> ${model.replace(/^litellm\//i, '')} -> ${LITELLM_BASE_URL}/v1/messages`);
-    return forwardLiteLLM(req, res, body, model);
+    logRoutingDecision('REROUTE  ', `model=${model}${effortSuffix} -> ${model.replace(/^litellm\//i, '')} -> ${LITELLM_BASE_URL}/v1/messages`);
+    return forwardLiteLLM(req, res, routedBody, model);
   }
 
   if (/^(gpt-|o[1-9]|o[1-9]-|gemini-|deepseek-|llama-|mistral-|mixtral-)/i.test(model)) {
     const litellmModel = `litellm/${model}`;
-    logRoutingDecision('REROUTE  ', `model=${model} -> ${litellmModel.replace(/^litellm\//i, '')} -> ${LITELLM_BASE_URL}/v1/messages`);
-    return forwardLiteLLM(req, res, body, litellmModel);
+    logRoutingDecision('REROUTE  ', `model=${model}${effortSuffix} -> ${litellmModel.replace(/^litellm\//i, '')} -> ${LITELLM_BASE_URL}/v1/messages`);
+    return forwardLiteLLM(req, res, routedBody, litellmModel);
   }
 
-  logRoutingDecision('REJECT   ', `model=${model} | reason=no LiteLLM routing match`);
+  logRoutingDecision('REJECT   ', `model=${model}${effortSuffix} | reason=no LiteLLM routing match`);
   sendJson(res, 400, { error: `Unknown non-native model '${model}'. Use a supported model name or a litellm/ prefix.` });
 }
 

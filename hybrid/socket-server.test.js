@@ -201,6 +201,232 @@ test('routes system markers and strips them before forwarding', async () => {
   fs.unlinkSync(envFile);
 });
 
+test('applies effort markers for litellm reroutes', async () => {
+  const seen = [];
+  upstream = await startUpstream((req, res) => {
+    const chunks = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => {
+      seen.push(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+  });
+
+  const envFile = path.join(os.tmpdir(), `litellm-${process.pid}-${Date.now()}-effort.env`);
+  fs.writeFileSync(envFile, 'LITELLM_API_KEY=effort-test-key\n', 'utf8');
+  router = await startRouter({
+    HYBRID_LITELLM_BASE_URL: upstream.baseUrl,
+    LITELLM_ENV_PATH: envFile,
+  });
+
+  const response = await request(router.socketPath, {
+    path: '/v1/messages',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-5.4-mini',
+      system: 'route $%$model: litellm/gpt-5.4-mini$%$ $%$effort: medium$%$',
+      messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }],
+    }),
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(seen.length, 1);
+  assert.deepEqual(seen[0], {
+    model: 'gpt-5.4-mini',
+    system: 'route',
+    messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }],
+    reasoning_effort: 'medium',
+  });
+  fs.unlinkSync(envFile);
+});
+
+test('keeps explicit litellm reasoning effort over system marker', async () => {
+  const seen = [];
+  upstream = await startUpstream((req, res) => {
+    const chunks = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => {
+      seen.push(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+  });
+
+  const envFile = path.join(os.tmpdir(), `litellm-${process.pid}-${Date.now()}-explicit-effort.env`);
+  fs.writeFileSync(envFile, 'LITELLM_API_KEY=explicit-effort-test-key\n', 'utf8');
+  router = await startRouter({
+    HYBRID_LITELLM_BASE_URL: upstream.baseUrl,
+    LITELLM_ENV_PATH: envFile,
+  });
+
+  const response = await request(router.socketPath, {
+    path: '/v1/messages',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-5.4-mini',
+      system: 'route $%$model: litellm/gpt-5.4-mini$%$ $%$effort: medium$%$',
+      reasoning_effort: 'high',
+      messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }],
+    }),
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].reasoning_effort, 'high');
+  fs.unlinkSync(envFile);
+});
+
+test('applies effort markers for native reroutes', async () => {
+  const originalRequest = https.request;
+  const seen = [];
+
+  https.request = function patchedRequest(options, callback) {
+    const isRouterSocketRequest = typeof options === 'object' && options && 'socketPath' in options;
+    if (isRouterSocketRequest) {
+      return originalRequest.call(this, options, callback);
+    }
+
+    const req = new (require('node:stream').PassThrough)();
+    const chunks = [];
+    req.write = (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      return true;
+    };
+    req.end = (chunk) => {
+      if (chunk) req.write(chunk);
+      const res = new (require('node:stream').PassThrough)();
+      res.statusCode = 200;
+      res.headers = { 'content-type': 'application/json' };
+      process.nextTick(() => {
+        seen.push(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+        callback(res);
+        res.end(JSON.stringify({ ok: true }));
+      });
+    };
+    req.on = () => req;
+    return req;
+  };
+
+  try {
+    router = await startRouter();
+    const response = await request(router.socketPath, {
+      path: '/v1/messages?beta=true',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-5.4-mini',
+        system: 'route $%$model: native/sonnet$%$ $%$effort: medium$%$',
+        messages: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }],
+      }),
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(seen.length, 1);
+    assert.deepEqual(seen[0], {
+      model: 'claude-sonnet-4-6',
+      system: 'route',
+      messages: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }],
+      effort: 'medium',
+      thinking: { type: 'adaptive' },
+    });
+  } finally {
+    https.request = originalRequest;
+  }
+});
+
+test('keeps explicit native thinking config over system marker', async () => {
+  const originalRequest = https.request;
+  const seen = [];
+
+  https.request = function patchedRequest(options, callback) {
+    const isRouterSocketRequest = typeof options === 'object' && options && 'socketPath' in options;
+    if (isRouterSocketRequest) {
+      return originalRequest.call(this, options, callback);
+    }
+
+    const req = new (require('node:stream').PassThrough)();
+    const chunks = [];
+    req.write = (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      return true;
+    };
+    req.end = (chunk) => {
+      if (chunk) req.write(chunk);
+      const res = new (require('node:stream').PassThrough)();
+      res.statusCode = 200;
+      res.headers = { 'content-type': 'application/json' };
+      process.nextTick(() => {
+        seen.push(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+        callback(res);
+        res.end(JSON.stringify({ ok: true }));
+      });
+    };
+    req.on = () => req;
+    return req;
+  };
+
+  try {
+    router = await startRouter();
+    const response = await request(router.socketPath, {
+      path: '/v1/messages?beta=true',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-5.4-mini',
+        system: 'route $%$model: native/sonnet$%$ $%$effort: medium$%$',
+        thinking: { type: 'disabled' },
+        messages: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }],
+      }),
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(seen.length, 1);
+    assert.deepEqual(seen[0], {
+      model: 'claude-sonnet-4-6',
+      system: 'route',
+      thinking: { type: 'disabled' },
+      messages: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }],
+    });
+  } finally {
+    https.request = originalRequest;
+  }
+});
+
+test('ignores malformed model markers in request text', async () => {
+  const seen = [];
+  upstream = await startUpstream((req, res) => {
+    const chunks = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => {
+      seen.push({ url: req.url, headers: req.headers, body: Buffer.concat(chunks).toString('utf8') });
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+  });
+  const envFile = path.join(os.tmpdir(), `litellm-${process.pid}-${Date.now()}-malformed.env`);
+  fs.writeFileSync(envFile, 'LITELLM_API_KEY=malformed-test-key\n', 'utf8');
+  router = await startRouter({
+    HYBRID_LITELLM_BASE_URL: upstream.baseUrl,
+    LITELLM_ENV_PATH: envFile,
+  });
+
+  const response = await request(router.socketPath, {
+    path: '/v1/messages',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      messages: [
+        { role: 'user', content: [{ type: 'text', text: 'hello $%$model: experimental$%$' }] },
+      ],
+    }),
+  });
+
+  assert.equal(response.statusCode, 401);
+  assert.equal(seen.length, 0);
+  const log = fs.readFileSync(routerLogPath, 'utf8');
+  assert.match(log, /NATIVE\s+\| model=claude-sonnet-4-6 \| path=\/v1\/messages/);
+  fs.unlinkSync(envFile);
+});
+
 test('ignores malformed model markers in request text', async () => {
   const seen = [];
   upstream = await startUpstream((req, res) => {
