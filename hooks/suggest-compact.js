@@ -4,7 +4,8 @@
  *
  * Cross-platform (Windows, macOS, Linux)
  *
- * Runs on PreToolUse or periodically to suggest manual compaction at logical intervals
+ * Runs on PreToolUse to suggest manual compaction at logical intervals
+ * Also works when invoked periodically.
  *
  * Why manual over auto-compact:
  * - Auto-compact happens at arbitrary points, often mid-task
@@ -19,7 +20,7 @@ const {
   getTempDir,
   writeFile,
   log
-} = require('../lib/utils');
+} = require('./lib/utils');
 
 async function main() {
   // Track tool call count (increment in a temp file)

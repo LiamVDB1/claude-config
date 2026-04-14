@@ -74,7 +74,9 @@
       "Bash(colgrep *)",
       "Bash(* --help *)",
       "Bash(* --version)",
-      "Read(./.env.example)"
+      "Read(./.env.example)",
+      "Bash(curl * http://localhost:4000/*)",
+      "Bash(curl * http://localhost:4000)"
     ],
     "deny": [
       "Read(./.env)",
@@ -90,7 +92,6 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -132,6 +133,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/bash ~/.claude/hooks/ralph-controller-stop-hook.sh"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -150,7 +161,8 @@
     "code-simplifier@claude-plugins-official": false,
     "ralph-loop@claude-plugins-official": false,
     "claude-md-management@claude-plugins-official": false,
-    "claude-code-setup@claude-plugins-official": true
+    "claude-code-setup@claude-plugins-official": true,
+    "github@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "everything-claude-code": {
@@ -190,6 +202,9 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
+  "voiceEnabled": true,
   "autoDreamEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
+  "model": "gpt-5.4"
 }
