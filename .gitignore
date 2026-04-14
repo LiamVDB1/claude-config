@@ -9,6 +9,7 @@ litellm.env
 __pycache__/
 *.py[cod]
 .ruff_cache/
+hybrid/router.log
 
 # Git internals
 .git/
