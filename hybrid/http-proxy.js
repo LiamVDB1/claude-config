@@ -5,14 +5,14 @@ const fs = require('node:fs');
 const http = require('node:http');
 const https = require('node:https');
 const path = require('node:path');
-const tls = require('node:tls');
 const { URL } = require('node:url');
-const { execFileSync } = require('node:child_process');
 
+const HYBRID_PROXY_PORT = Number.parseInt(process.env.HYBRID_PROXY_PORT || '', 10);
 const SOCKET_PATH = process.env.ANTHROPIC_UNIX_SOCKET;
 const LITELLM_BASE_URL = process.env.HYBRID_LITELLM_BASE_URL || 'https://litellm.juphorizon.com';
 const LITELLM_ENV_PATH = process.env.HYBRID_LITELLM_ENV_PATH || path.join(process.env.HOME || '', '.claude', 'litellm.env');
 const ROUTER_LOG_PATH = path.join(process.env.HOME || '', '.claude', 'hybrid', 'router.log');
+
 const NATIVE_MODEL_PATTERNS = [/^claude-/i, /^anthropic\.claude-/i, /^claude$/i];
 const NATIVE_MODEL_ALIASES = {
   opus: 'claude-opus-4-6',
@@ -22,13 +22,6 @@ const NATIVE_MODEL_ALIASES = {
 const MODEL_MARKER_PATTERN = /\$%\$model:\s*([^\n$%]+?)\s*\$%\$/i;
 const MODEL_TARGET_PREFIXES = ['litellm/', 'native/'];
 const MARKER_REMOVAL_PATTERN = /\s*\$%\$model:\s*[^\n$%]+?\s*\$%\$/gi;
-
-const state = {
-  server: null,
-  listenerReady: null,
-  litellmToken: null,
-  tlsDir: null,
-};
 
 const SAFE_FORWARD_HEADERS = new Set([
   'accept',
@@ -47,7 +40,11 @@ const SAFE_FORWARD_HEADERS = new Set([
   'x-stainless-timeout',
 ]);
 
-const ALLOWED_PROXY_PATHS = new Set(['/v1/messages', '/v1/models']);
+const state = {
+  server: null,
+  listenerReady: null,
+  litellmToken: null,
+};
 
 function log(message) {
   const line = `${message}\n`;
@@ -55,7 +52,7 @@ function log(message) {
   try {
     fs.appendFileSync(ROUTER_LOG_PATH, line);
   } catch {
-    // Best-effort file logging; stderr remains the primary signal.
+    // Best-effort file logging; stderr remains primary signal.
   }
 }
 
@@ -97,72 +94,6 @@ function readEnvVar(filePath, key) {
 
 function loadLiteLLMToken() {
   return readEnvVar(LITELLM_ENV_PATH, 'LITELLM_API_KEY').trim();
-}
-
-function ensureTlsMaterial() {
-  if (state.tlsDir) return state.tlsDir;
-
-  const tlsDir = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'claude-hybrid-tls-'));
-  const keyPath = path.join(tlsDir, 'localhost.key');
-  const certPath = path.join(tlsDir, 'localhost.crt');
-  const configPath = path.join(tlsDir, 'openssl.cnf');
-
-  fs.writeFileSync(configPath, `
-[req]
-distinguished_name = req_distinguished_name
-x509_extensions = v3_req
-prompt = no
-
-[req_distinguished_name]
-CN = api.anthropic.com
-
-[v3_req]
-subjectAltName = @alt_names
-basicConstraints = CA:FALSE
-keyUsage = digitalSignature, keyEncipherment
-extendedKeyUsage = serverAuth
-
-[alt_names]
-DNS.1 = api.anthropic.com
-DNS.2 = localhost
-`, 'utf8');
-
-  execFileSync('openssl', [
-    'req',
-    '-x509',
-    '-nodes',
-    '-newkey',
-    'rsa:2048',
-    '-keyout',
-    keyPath,
-    '-out',
-    certPath,
-    '-days',
-    '1',
-    '-config',
-    configPath,
-    '-extensions',
-    'v3_req',
-  ], { stdio: 'ignore' });
-
-  state.tlsDir = tlsDir;
-  return tlsDir;
-}
-
-function loadTlsOptions() {
-  const tlsDir = ensureTlsMaterial();
-  return {
-    key: fs.readFileSync(path.join(tlsDir, 'localhost.key')),
-    cert: fs.readFileSync(path.join(tlsDir, 'localhost.crt')),
-  };
-}
-
-function cleanupTlsMaterial() {
-  if (!state.tlsDir) return;
-  try {
-    fs.rmSync(state.tlsDir, { recursive: true, force: true });
-  } catch {}
-  state.tlsDir = null;
 }
 
 function isNativeModel(model) {
@@ -312,21 +243,30 @@ function sendJson(res, statusCode, payload) {
   res.end(body);
 }
 
-async function forwardNative(req, res, body) {
+function trySanitizeNativeBody(body) {
+  const parsed = readJsonBody(body);
+  if (parsed.error || !parsed.body || typeof parsed.body !== 'object') return body;
+  return Buffer.from(JSON.stringify({
+    ...parsed.body,
+    messages: sanitizeAnthropicMessages(parsed.body.messages),
+  }));
+}
+
+async function forwardNative(req, res, body, options = {}) {
   try {
-    const parsed = readJsonBody(body);
-    const sanitizedBody = parsed.error || !parsed.body || typeof parsed.body !== 'object'
-      ? body
-      : Buffer.from(JSON.stringify({
-        ...parsed.body,
-        messages: sanitizeAnthropicMessages(parsed.body.messages),
-      }));
+    const requestBody = options.sanitizeThinking ? trySanitizeNativeBody(body) : body;
     const targetUrl = new URL(req.url, 'https://api.anthropic.com');
-    const headers = createHeaders(req.headers, {
+    const upstreamHeaders = {
+      ...req.headers,
       host: 'api.anthropic.com',
-      'content-length': Buffer.byteLength(sanitizedBody),
-    }, ['transfer-encoding']);
-    const upstream = await performRequest(targetUrl, { method: req.method, headers }, sanitizedBody);
+    };
+
+    if (requestBody && requestBody.length) {
+      upstreamHeaders['content-length'] = Buffer.byteLength(requestBody);
+      delete upstreamHeaders['transfer-encoding'];
+    }
+
+    const upstream = await performRequest(targetUrl, { method: req.method, headers: upstreamHeaders }, requestBody);
     pipeResponse(upstream, res);
     upstream.on('error', (error) => {
       logUpstreamError('api.anthropic.com (response stream)', error);
@@ -369,21 +309,21 @@ async function handleMessages(req, res, body) {
   const parsed = readJsonBody(body);
   if (parsed.error || !parsed.body || typeof parsed.body !== 'object') {
     logRoutingDecision('NATIVE   ', `model=(unparsed) | path=${req.url}`);
-    return forwardNative(req, res, body);
+    return forwardNative(req, res, body, { sanitizeThinking: true });
   }
 
   const markerResult = applyModelMarker(parsed.body);
   const activeBody = markerResult.body;
   const model = typeof activeBody.model === 'string' ? activeBody.model : '';
   const markerTarget = markerResult.target;
-  const targetModel = markerTarget ? markerTarget.replace(/^(?:litellm|native)\//i, '') : null;
+  const targetModel = markerTarget ? markerResult.target.replace(/^(?:litellm|native)\//i, '') : null;
 
   if (markerTarget) {
     if (markerTarget.toLowerCase().startsWith('native/')) {
       const resolvedModel = targetModel ? (NATIVE_MODEL_ALIASES[targetModel.toLowerCase()] || targetModel) : null;
       const nativeBody = resolvedModel ? { ...activeBody, model: resolvedModel } : activeBody;
       logRoutingDecision('NATIVE   ', `model=${model || '(empty)'} marker=${markerTarget} -> ${resolvedModel || '(empty)'} -> https://api.anthropic.com/v1/messages`);
-      return forwardNative(req, res, Buffer.from(JSON.stringify(nativeBody)));
+      return forwardNative(req, res, Buffer.from(JSON.stringify(nativeBody)), { sanitizeThinking: true });
     }
     const routedModel = `litellm/${targetModel}`;
     logRoutingDecision('REROUTE  ', `model=${model || '(empty)'} marker=${markerTarget} -> ${targetModel || '(empty)'} -> ${LITELLM_BASE_URL}/v1/messages`);
@@ -392,7 +332,7 @@ async function handleMessages(req, res, body) {
 
   if (isNativeModel(model)) {
     logRoutingDecision('NATIVE   ', `model=${model || '(empty)'} | path=${req.url}`);
-    return forwardNative(req, res, body);
+    return forwardNative(req, res, body, { sanitizeThinking: true });
   }
 
   if (model.toLowerCase().startsWith('litellm/')) {
@@ -412,90 +352,93 @@ async function handleMessages(req, res, body) {
 
 async function handleRequest(req, res) {
   logRequestArrival(req);
+
+  const requestUrl = new URL(req.url, 'https://api.anthropic.com');
+  if (req.method === 'POST' && requestUrl.pathname === '/v1/messages') {
+    const chunks = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', async () => {
+      const body = Buffer.concat(chunks);
+      await handleMessages(req, res, body);
+    });
+    return;
+  }
+
+  logRoutingDecision('NATIVE   ', `path=${req.url}`);
   const chunks = [];
   req.on('data', (chunk) => chunks.push(chunk));
   req.on('end', async () => {
     const body = Buffer.concat(chunks);
-    try {
-      const requestUrl = new URL(req.url, 'https://api.anthropic.com');
-      if (req.method === 'POST' && requestUrl.pathname === '/v1/messages') {
-        await handleMessages(req, res, body);
-        return;
-      }
-
-      if (!ALLOWED_PROXY_PATHS.has(requestUrl.pathname)) {
-        logRoutingDecision('REJECT   ', `path=${req.url} | reason=unsupported path`);
-        sendJson(res, 404, { error: `Unsupported path '${req.url}'` });
-        return;
-      }
-
-      logRoutingDecision('NATIVE   ', `path=${req.url}`);
-      const targetUrl = requestUrl;
-      const headers = createHeaders(req.headers, { host: 'api.anthropic.com' }, ['transfer-encoding']);
-      const upstream = await performRequest(targetUrl, { method: req.method, headers }, body);
-      pipeResponse(upstream, res);
-    } catch (error) {
-      logUpstreamError('api.anthropic.com (connect/request)', error);
-      sendJson(res, 502, { error: getErrorMessage(error) });
-    }
+    await forwardNative(req, res, body, { sanitizeThinking: false });
   });
 }
 
-function setupServer() {
-  if (!SOCKET_PATH) {
-    throw new Error('ANTHROPIC_UNIX_SOCKET is required');
+function resolveListenTarget() {
+  if (Number.isInteger(HYBRID_PROXY_PORT) && HYBRID_PROXY_PORT > 0 && HYBRID_PROXY_PORT <= 65535) {
+    return { mode: 'tcp', host: '127.0.0.1', port: HYBRID_PROXY_PORT };
   }
+  if (SOCKET_PATH) {
+    return { mode: 'unix', socketPath: SOCKET_PATH };
+  }
+  throw new Error('HYBRID_PROXY_PORT or ANTHROPIC_UNIX_SOCKET is required');
+}
+
+function setupServer() {
   if (state.server) return state.server;
-  fs.mkdirSync(path.dirname(SOCKET_PATH), { recursive: true, mode: 0o700 });
-  try { fs.chmodSync(path.dirname(SOCKET_PATH), 0o700); } catch {}
-  try { fs.unlinkSync(SOCKET_PATH); } catch {}
 
-  const server = https.createServer(loadTlsOptions(), (req, res) => {
+  const listenTarget = resolveListenTarget();
+  if (listenTarget.mode === 'unix') {
+    fs.mkdirSync(path.dirname(listenTarget.socketPath), { recursive: true, mode: 0o700 });
+    try { fs.chmodSync(path.dirname(listenTarget.socketPath), 0o700); } catch {}
+    try { fs.unlinkSync(listenTarget.socketPath); } catch {}
+  }
+
+  const server = http.createServer((req, res) => {
     void handleRequest(req, res);
-  });
-
-  server.on('connection', () => {
-    log('CONNECT  | raw socket accepted');
-  });
-
-  server.on('secureConnection', () => {
-    log('SECURE   | tls handshake completed');
-  });
-
-  server.on('tlsClientError', (error) => {
-    log(`ERROR    | tls client error: ${getErrorDetail(error)}`);
   });
 
   state.server = server;
   state.listenerReady = new Promise((resolve, reject) => {
     server.once('error', (error) => {
-      log(`ERROR    | socket server error: ${getErrorDetail(error)}`);
+      log(`ERROR    | proxy server error: ${getErrorDetail(error)}`);
       reject(error);
     });
-    server.listen(SOCKET_PATH, () => {
-      try { fs.chmodSync(SOCKET_PATH, 0o600); } catch {}
+
+    const onListening = () => {
+      if (listenTarget.mode === 'unix') {
+        try { fs.chmodSync(listenTarget.socketPath, 0o600); } catch {}
+      }
       const token = loadLiteLLMToken();
       state.litellmToken = token || null;
       if (!token) log(`WARN     | LiteLLM token missing at ${LITELLM_ENV_PATH}`);
-      log(`STARTED  | pid=${process.pid} socket=${SOCKET_PATH} litellm=${LITELLM_BASE_URL}`);
+      if (listenTarget.mode === 'tcp') {
+        log(`STARTED  | pid=${process.pid} host=${listenTarget.host} port=${listenTarget.port} litellm=${LITELLM_BASE_URL}`);
+      } else {
+        log(`STARTED  | pid=${process.pid} socket=${listenTarget.socketPath} litellm=${LITELLM_BASE_URL}`);
+      }
+      process.stdout.write('READY\n');
       resolve(server);
-    });
+    };
+
+    if (listenTarget.mode === 'tcp') {
+      server.listen(listenTarget.port, listenTarget.host, onListening);
+    } else {
+      server.listen(listenTarget.socketPath, onListening);
+    }
   });
 
   return server;
 }
 
 async function shutdown() {
-  if (!state.server) {
-    cleanupTlsMaterial();
-    return;
-  }
+  if (!state.server) return;
   const server = state.server;
   state.server = null;
   state.litellmToken = null;
   await new Promise((resolve) => server.close(resolve));
-  try { fs.unlinkSync(SOCKET_PATH); } catch {}
-  cleanupTlsMaterial();
+  if (SOCKET_PATH) {
+    try { fs.unlinkSync(SOCKET_PATH); } catch {}
+  }
 }
 
 process.on('uncaughtException', (error) => {
@@ -522,5 +465,6 @@ module.exports = {
     isNativeModel,
     readEnvVar,
     pickForwardHeaders,
+    sanitizeAnthropicMessages,
   },
 };
