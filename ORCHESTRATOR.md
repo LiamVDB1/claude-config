@@ -234,8 +234,9 @@ The `continuous-learning-v2` skill captures patterns from Edit/Write operations 
 ### Verification
 
 - After multi-file changes, run the project's test, lint, and build commands — or use `/verify` for the full `verification-loop`
-- For cross-cutting, security-sensitive, or hard-to-reverse changes, use a separate verification pass or review subagent
-- For simple, low-risk changes, inline verification is sufficient — do not add ceremony
+- Use a dedicated `code-reviewer` pass when the change is multi-file, changes behavior, refactors existing code, or is about to become a commit/PR where an independent review is worth the cost
+- Use `security-reviewer` only when touching auth, permissions, user input, API boundaries, secrets, crypto, shell/file/network/database boundaries, or other clearly security-sensitive surfaces
+- For tiny, low-risk, presentation-only, docs, config, or mechanical changes, inline verification is sufficient — do not add ceremony or extra review passes by default
 
 ---
 
@@ -254,7 +255,7 @@ The lead agent decides *what* to implement. Workers do the actual implementation
 | Multiple independent tasks from a plan | **`subagent-driven-development`** — one fresh worker per task |
 | Multiple independent problems (e.g., test failures) | **`dispatching-parallel-agents`** — parallel workers |
 | Architecture decision, complex design, high ambiguity | **Lead agent** + `planner` or one consultant |
-| Security-sensitive changes | **Lead agent** + `security-reviewer` |
+| Security-sensitive changes | **Lead agent** + `security-reviewer` when crossing security boundaries |
 | Research-heavy work (unfamiliar library, new pattern) | **Worker for research** → lead decides → **worker implements** |
 
 Prefer `default-code-worker` first. Use `sonnet-worker` as the native-Claude middle tier when the task needs stronger comprehension and pattern fidelity. Use `strong-code-worker` only when the task is still bounded but likely needs more frontier-model depth than `sonnet-worker`.
@@ -303,9 +304,9 @@ The lead agent orchestrates the workflow (brainstorm -> plan -> delegate -> revi
 | Agent | Purpose | When to use |
 |-------|---------|-------------|
 | `planner` | Phased planning with dependency analysis | Complex features, architecture changes |
-| `code-reviewer` | Review with confidence-based issue filtering | Pre-PR quality gate, code audit |
+| `code-reviewer` | Review with confidence-based issue filtering | Multi-file changes, behavior changes, refactors, pre-PR quality gates |
 | `build-error-resolver` | Minimal-diff build/type error fixing | Get the build green without architectural changes |
-| `security-reviewer` | Focused security review | Auth, input handling, secrets, injection risks |
+| `security-reviewer` | Focused security review | Auth, permissions, input handling, API boundaries, secrets, injection risks |
 
 ### Consultant Agents (Different AI Models)
 
@@ -412,6 +413,7 @@ Avoid these specific failure modes:
 - **Keeping raw exploration in the main thread.** Delegate noisy search to workers. Keep the main thread clean for synthesis and action.
 - **Owning the entire workflow.** You orchestrate brainstorm -> plan -> delegate -> review. The implementation step within that flow gets delegated — you don't write the code yourself unless it's tiny or requires live judgment.
 - **Skipping the design gate.** For non-trivial features, brainstorm and plan before coding. Follow the TDD Routing policy when dispatching workers — instruct TDD for core logic, bug fixes, and regressions.
+- **Running dedicated review passes by default.** Use `code-reviewer` and `security-reviewer` when the expected risk reduction justifies the added model cost; do not treat them as mandatory for trivial or mechanical changes.
 - **Ignoring available skills.** Check the skill inventory above before reinventing a workflow. Use `/context-budget` to monitor overhead.
 
 ---
