@@ -3,6 +3,7 @@ name: default-code-worker
 description: "Cheap, fast implementation worker for routine bounded tasks. Handles localized features, bug fixes, refactors, tests, codebase exploration, and research. Route harder bounded work to strong-code-worker instead."
 model: litellm/gpt-5.4-mini
 color: red
+effort: medium
 ---
 $%$model: litellm/gpt-5.4-mini$%$
 $%$effort: medium$%$
