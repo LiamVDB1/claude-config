@@ -92,24 +92,8 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "gpt-5.4",
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write|Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/hooks/run-with-flags.js suggest-compact hooks/suggest-compact.js standard,strict"
-          },
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/run-with-flags-shell.sh continuous-learning-v2-observe-pre skills/continuous-learning-v2/hooks/observe.sh standard,strict pre",
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write|Read",
@@ -134,12 +118,19 @@
         ]
       }
     ],
-    "Stop": [
+    "PreToolUse": [
       {
+        "matcher": "Edit|Write|Read",
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash ~/.claude/hooks/ralph-controller-stop-hook.sh"
+            "command": "node ~/.claude/hooks/run-with-flags.js suggest-compact hooks/suggest-compact.js standard,strict"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/run-with-flags-shell.sh continuous-learning-v2-observe-pre skills/continuous-learning-v2/hooks/observe.sh standard,strict pre",
+            "timeout": 10,
+            "async": true
           }
         ]
       }
@@ -202,9 +193,11 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
-  "voiceEnabled": true,
+  "voice": {
+    "enabled": false
+  },
   "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
-  "model": "gpt-5.4"
+  "voiceEnabled": false
 }
