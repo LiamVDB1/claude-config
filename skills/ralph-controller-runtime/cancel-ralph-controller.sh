@@ -3,7 +3,7 @@
 set -euo pipefail
 
 STATE_FILE=".claude/ralph-controller.local.md"
-RUNTIME="$HOME/.claude/skills/ralph-controller/controller.py"
+RUNTIME="$HOME/.claude/skills/ralph-controller-runtime/controller.py"
 
 if [[ ! -f "$STATE_FILE" ]]; then
   echo "No active ralph-controller session found."

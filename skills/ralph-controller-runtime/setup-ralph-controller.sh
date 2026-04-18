@@ -7,6 +7,7 @@ STATE_FILE=""
 LOOP_STATE_FILE=""
 MAX_ITERATIONS=0
 COMPLETION_PROMISE="null"
+SESSION_ID=""
 
 usage() {
   cat <<'EOF'
@@ -21,6 +22,7 @@ OPTIONS:
   --loop-state-file <path>     Machine-readable controller state file
   --max-iterations <n>         Maximum controller turns before auto-stop (default: unlimited)
   --completion-promise <text>  Completion phrase (quoted if multi-word)
+  --session-id <id>            Bind the marker to an explicit session id
   -h, --help                   Show this help
 EOF
 }
@@ -45,6 +47,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --completion-promise)
       COMPLETION_PROMISE="$2"
+      shift 2
+      ;;
+    --session-id)
+      SESSION_ID="$2"
       shift 2
       ;;
     -h|--help)
@@ -72,31 +78,44 @@ STATE_FILE="$STATE_FILE" \
 LOOP_STATE_FILE="$LOOP_STATE_FILE" \
 MAX_ITERATIONS="$MAX_ITERATIONS" \
 COMPLETION_PROMISE="$COMPLETION_PROMISE" \
+SESSION_ID="$SESSION_ID" \
 python3 - <<'PY'
 from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 from datetime import datetime, timezone
+from pathlib import Path
 
 prompt_file = os.environ["PROMPT_FILE"]
 state_file = os.environ["STATE_FILE"]
 loop_state_file = os.environ["LOOP_STATE_FILE"]
 max_iterations = int(os.environ["MAX_ITERATIONS"])
 completion_promise = os.environ["COMPLETION_PROMISE"]
+explicit_session_id = os.environ.get("SESSION_ID", "").strip()
+session_id = explicit_session_id or os.environ.get("CLAUDE_SESSION_ID", "").strip() or os.environ.get("CLAUDE_CODE_SESSION_ID", "").strip()
+project_root = str(Path.cwd())
 
 started_at_value = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+existing_loop_state_path = Path(loop_state_file)
+if existing_loop_state_path.exists():
+    existing_loop_state = json.loads(existing_loop_state_path.read_text(encoding="utf-8"))
+else:
+    existing_loop_state = {}
+loop_iteration = int(existing_loop_state.get("iteration", 0) or 0)
 
 frontmatter = {
     "active": True,
     "controller": "ralph-controller",
     "iteration": 0,
+    "session_id": session_id,
+    "loop_iteration_base": loop_iteration,
     "max_iterations": max_iterations,
     "completion_promise": None if completion_promise == "null" else completion_promise,
     "prompt_file": prompt_file,
     "state_file": state_file,
     "loop_state_file": loop_state_file,
+    "project_root": project_root,
     "cancelled": False,
     "started_at": started_at_value,
 }
@@ -107,7 +126,7 @@ for key, value in frontmatter.items():
     frontmatter_lines.append(f"{key}: {rendered}")
 frontmatter_lines.append("---")
 frontmatter_lines.append("")
-frontmatter_lines.append("Use the global ralph-controller skill with these files:")
+frontmatter_lines.append("Use the global /ralph-controller command with these files:")
 frontmatter_lines.append(f"- prompt file: {prompt_file}")
 frontmatter_lines.append(f"- state file: {state_file}")
 frontmatter_lines.append(f"- loop state file: {loop_state_file}")
@@ -120,21 +139,20 @@ Path(".claude/ralph-controller.local.md").write_text(
     encoding="utf-8",
 )
 
-# Always reset loop state on setup — stale state from previous runs
-# or test suites can leave the controller in WAIT/terminal states.
 path = Path(loop_state_file)
 path.parent.mkdir(parents=True, exist_ok=True)
-path.write_text(json.dumps({
-    "version": 1,
-    "controller_state": "BOOT",
-    "iteration": 0,
-    "stagnation_count": 0,
-    "last_directive": None,
-    "wake_after_seconds": 0,
-    "wake_at": None,
-    "terminal_reason": None,
-    "cancelled": False,
-}, indent=2) + "\n", encoding="utf-8")
+if not path.exists():
+    path.write_text(json.dumps({
+        "version": 1,
+        "controller_state": "BOOT",
+        "iteration": loop_iteration,
+        "stagnation_count": 0,
+        "last_directive": None,
+        "wake_after_seconds": 0,
+        "wake_at": None,
+        "terminal_reason": None,
+        "cancelled": False,
+    }, indent=2) + "\n", encoding="utf-8")
 PY
 
 cat <<EOF
@@ -145,6 +163,7 @@ State file: $STATE_FILE
 Loop state file: $LOOP_STATE_FILE
 Max iterations: $(if [[ $MAX_ITERATIONS -gt 0 ]]; then echo $MAX_ITERATIONS; else echo "unlimited"; fi)
 Completion promise: $(if [[ "$COMPLETION_PROMISE" != "null" ]]; then echo "$COMPLETION_PROMISE"; else echo "none"; fi)
+Project root: $(pwd)
 
-The controller state file is now ready. Use the global ralph-controller skill semantics for each controlled turn.
+The controller state file is now ready. Use the global /ralph-controller command semantics for each controlled turn.
 EOF

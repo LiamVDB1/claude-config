@@ -1,6 +1,6 @@
 ---
-name: ralph-controller
-description: Replace blind prompt replay loops with a deterministic controller that runs one orchestrator turn at a time, parses a strict directive block, owns WAIT/SLEEP semantics, and tracks stagnation. Use when you want a reusable autonomous controller instead of `ralph-loop`.
+name: ralph-controller-runtime
+description: Internal runtime semantics for the `/ralph-controller` command. Replaces blind prompt replay loops with a deterministic controller that runs one orchestrator turn at a time, parses a strict directive block, owns WAIT/SLEEP semantics, and tracks stagnation.
 ---
 
 # Ralph Controller

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Deterministic controller runtime for directive-based autonomous loops."""
+"""Deterministic controller runtime for directive-based autonomous loops.
+
+Single transport: the Stop hook parses the latest assistant turn, applies the
+directive to loop_state, and either blocks (Ralph-style resume) or allows the
+session to end. No ScheduleWakeup, no --resume-from-marker, no second path.
+"""
 
 from __future__ import annotations
 
@@ -33,7 +38,6 @@ class ResumeDecision:
     should_resume: bool
     reason: str
     system_message: str | None = None
-    next_iteration: int | None = None
     prompt: str | None = None
 
 
@@ -114,8 +118,10 @@ def write_local_state(path: Path, state: dict[str, Any]) -> None:
         [
             "---",
             "",
-            "Use the global ralph-controller skill with the configured files.",
-            "Read the prompt file once for the run, operate one controlled turn, and end with a valid ralph-controller directive block.",
+            "Active ralph-controller session. The Stop hook parses the latest directive",
+            "block, updates loop_state_file, and either blocks with a resume prompt or",
+            "lets the session end. Every assistant turn MUST end with a valid",
+            "<<<RALPH_CONTROLLER_DIRECTIVE>>> block.",
         ]
     )
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -230,6 +236,20 @@ def apply_directive(loop_state: dict[str, Any], directive: Directive) -> dict[st
     }
 
 
+def mark_missing_directive(loop_state: dict[str, Any], reason: str) -> dict[str, Any]:
+    return {
+        **loop_state,
+        "iteration": int(loop_state.get("iteration", 0)) + 1,
+        "controller_state": "STALL",
+        "stagnation_count": int(loop_state.get("stagnation_count", 0)) + 1,
+        "last_directive": None,
+        "wake_after_seconds": 0,
+        "wake_at": None,
+        "terminal_reason": reason,
+        "cancelled": False,
+    }
+
+
 def mark_cancelled(loop_state: dict[str, Any], reason: str = "controller cancelled") -> dict[str, Any]:
     return {
         **loop_state,
@@ -241,26 +261,46 @@ def mark_cancelled(loop_state: dict[str, Any], reason: str = "controller cancell
     }
 
 
-def build_resume_prompt(local_state: dict[str, Any]) -> str:
-    prompt_file = local_state["prompt_file"]
-    state_file = local_state["state_file"]
-    loop_state_file = local_state["loop_state_file"]
-    return "\n".join(
-        [
-            "Ralph-controller auto-resume is active. Execute the next controller turn now.",
-            "This is not status text. Treat this as the active user instruction for the resumed turn.",
-            f"1. Read this file first: {prompt_file}",
-            f"2. Read this state file: {state_file}",
-            f"3. Read this loop state file: {loop_state_file}",
-            "4. Perform exactly one controlled orchestration turn.",
-            "5. End your response with a valid ralph-controller directive block.",
-            "Do not stop at hook feedback. Do not just restate these instructions. Continue the run.",
-        ]
-    )
+def build_resume_prompt(local_state: dict[str, Any], directive: Directive | None, loop_state: dict[str, Any]) -> str:
+    prompt_file = local_state.get("prompt_file") or "<prompt file>"
+    state_file = local_state.get("state_file") or "<state file>"
+    loop_state_file = local_state.get("loop_state_file") or "<loop state file>"
+    controller_state = str(loop_state.get("controller_state") or "BOOT")
+    stagnation = int(loop_state.get("stagnation_count", 0) or 0)
 
+    header = [
+        "Continue the ralph-controller run now.",
+        "Use the instructions below as the active user instruction for this resumed turn.",
+        f"Current controller_state: {controller_state} (stagnation={stagnation}).",
+    ]
 
-# Hook debug output should stay concise and grep-friendly because the user may
-# inspect stderr/logs during live controller verification.
+    if directive is not None and directive.state == "WAIT":
+        header.append(
+            f"Your previous directive requested WAIT {directive.wake_after_seconds}s for: {directive.next_action}."
+        )
+        header.append(
+            "Poll the watched resource now. If it is still not ready, emit another WAIT directive; otherwise move on."
+        )
+    elif directive is not None and directive.state == "STALL":
+        header.append(
+            f"Your previous directive was STALL with next action: {directive.next_action}."
+        )
+        header.append("Do not repeat yourself. Produce a concrete next step this turn.")
+    elif directive is None:
+        header.append(
+            "The previous turn did NOT end with a valid directive block. This counts as stagnation."
+        )
+        header.append("End this turn with a valid <<<RALPH_CONTROLLER_DIRECTIVE>>> ... <<<END_RALPH_CONTROLLER_DIRECTIVE>>> block.")
+
+    body = [
+        f"1. Read this file first: {prompt_file}",
+        f"2. Read this state file: {state_file}",
+        f"3. Read this loop state file: {loop_state_file}",
+        "4. Perform exactly one controlled orchestration turn.",
+        "5. End your response with a valid ralph-controller directive block.",
+        "Do not stop at hook feedback. Do not just restate these instructions. Continue the run.",
+    ]
+    return "\n".join(header + body)
 
 
 def _extract_session_ids(hook_input: dict[str, Any]) -> list[str]:
@@ -316,7 +356,7 @@ def _extract_latest_assistant_text_from_transcript(transcript_path: Path) -> str
             payload = json.loads(raw_line)
         except json.JSONDecodeError:
             continue
-        if payload.get("role") != "assistant":
+        if payload.get("type") != "assistant" and payload.get("role") != "assistant":
             continue
         message = payload.get("message")
         if not isinstance(message, dict):
@@ -343,28 +383,56 @@ def evaluate_stop_hook(marker_path: Path, *, hook_input: dict[str, Any]) -> Resu
     if local_state is None:
         return ResumeDecision(False, "No active ralph-controller session.")
 
-    hook_session_ids = _extract_session_ids(hook_input)
-    state_session = str(local_state.get("session_id") or "")
-    if state_session and hook_session_ids and state_session not in hook_session_ids:
-        return ResumeDecision(False, "Active controller belongs to another session.")
-
     if not bool(local_state.get("active", False)):
         return ResumeDecision(False, "Controller marker is inactive.")
 
     if bool(local_state.get("cancelled", False)):
         return ResumeDecision(False, "Controller session has been cancelled.")
 
-    completion_promise = str(local_state.get("completion_promise") or "").strip()
-    transcript_path_raw = hook_input.get("transcript_path")
-    if completion_promise and transcript_path_raw:
-        transcript_path = Path(str(transcript_path_raw))
-        if transcript_path.exists():
-            latest_text = _extract_latest_assistant_text_from_transcript(transcript_path)
-            promise_text = _extract_completion_promise(latest_text)
-            if promise_text == completion_promise:
-                return ResumeDecision(False, "Completion promise satisfied.")
+    hook_session_ids = _extract_session_ids(hook_input)
+    latest_text = ""
+    last_assistant_message = hook_input.get("last_assistant_message")
+    if isinstance(last_assistant_message, str) and last_assistant_message.strip():
+        latest_text = last_assistant_message
+    if not latest_text:
+        transcript_path_raw = hook_input.get("transcript_path")
+        if transcript_path_raw:
+            transcript_path = Path(str(transcript_path_raw))
+            if transcript_path.exists():
+                latest_text = _extract_latest_assistant_text_from_transcript(transcript_path)
 
-    loop_state_path = Path(str(local_state["loop_state_file"]))
+    state_session = str(local_state.get("session_id") or "").strip()
+    if not state_session:
+        if not hook_session_ids:
+            return ResumeDecision(False, "Stop-hook payload missing session identity.")
+        if not latest_text or not _directive_present(latest_text):
+            return ResumeDecision(False, "Controller marker is not bound to a session.")
+
+        claimed_session = hook_session_ids[0]
+        local_state = {**local_state, "session_id": claimed_session}
+        write_local_state(marker_path, local_state)
+        state_session = claimed_session
+
+    if not hook_session_ids:
+        return ResumeDecision(False, "Stop-hook payload missing session identity.")
+
+    if state_session not in hook_session_ids:
+        return ResumeDecision(False, "Active controller belongs to another session.")
+
+    completion_promise = str(local_state.get("completion_promise") or "").strip()
+    if completion_promise and latest_text:
+        promise_text = _extract_completion_promise(latest_text)
+        if promise_text == completion_promise:
+            return ResumeDecision(False, "Completion promise satisfied.")
+
+    loop_state_raw = str(local_state.get("loop_state_file") or "").strip()
+    if not loop_state_raw:
+        return ResumeDecision(False, "Controller marker missing loop_state_file.")
+    loop_state_path = Path(loop_state_raw)
+    if not loop_state_path.is_absolute():
+        project_root_raw = str(local_state.get("project_root") or "").strip()
+        if project_root_raw:
+            loop_state_path = Path(project_root_raw) / loop_state_path
     loop_state = load_loop_state(loop_state_path)
     if bool(loop_state.get("cancelled", False)) or loop_state.get("controller_state") in TERMINAL_STATES:
         return ResumeDecision(False, "Controller state is terminal.")
@@ -374,17 +442,46 @@ def evaluate_stop_hook(marker_path: Path, *, hook_input: dict[str, Any]) -> Resu
     if max_iterations > 0 and iteration >= max_iterations:
         return ResumeDecision(False, f"Max iterations reached ({max_iterations}).")
 
+    directive: Directive | None = None
+    updated_loop_state: dict[str, Any]
+    try:
+        directive = parse_directive(latest_text) if latest_text else None
+    except ValueError as exc:
+        directive = None
+        _debug_reason(f"directive parse failed: {exc}")
+
+    if directive is not None:
+        updated_loop_state = apply_directive(loop_state, directive)
+    else:
+        updated_loop_state = mark_missing_directive(
+            loop_state, "no valid directive block in assistant turn"
+        )
+    save_loop_state(loop_state_path, updated_loop_state)
+
+    if updated_loop_state["controller_state"] in TERMINAL_STATES:
+        return ResumeDecision(
+            False,
+            f"Controller directive is terminal: {updated_loop_state['controller_state']}.",
+        )
+
     next_iteration = iteration + 1
     local_state_updated = {**local_state, "iteration": next_iteration}
     write_local_state(marker_path, local_state_updated)
 
-    system_message = f"🔄 Ralph-controller iteration {next_iteration}"
+    if directive is not None and directive.state == "WAIT":
+        sleep_for = max(0, min(directive.wake_after_seconds, 300))
+        if sleep_for > 0:
+            time.sleep(sleep_for)
+
+    system_message = (
+        f"🔄 Ralph-controller iteration {next_iteration} "
+        f"[{updated_loop_state['controller_state']}]"
+    )
     return ResumeDecision(
         True,
         "Resume active ralph-controller session.",
         system_message=system_message,
-        next_iteration=next_iteration,
-        prompt=build_resume_prompt(local_state_updated),
+        prompt=build_resume_prompt(local_state_updated, directive, updated_loop_state),
     )
 
 
@@ -398,17 +495,22 @@ def _handle_stop_hook(marker_path: Path, hook_input_file: Path) -> int:
     decision = evaluate_stop_hook(marker_path, hook_input=hook_input)
     _debug_reason(f"decision={'resume' if decision.should_resume else 'allow-stop'} reason={decision.reason}")
 
-    transcript_path_raw = hook_input.get("transcript_path")
-    if transcript_path_raw:
-        transcript_path = Path(str(transcript_path_raw))
-        if transcript_path.exists():
-            latest_text = _extract_latest_assistant_text_from_transcript(transcript_path)
-            if latest_text:
-                _debug_reason(
-                    "assistant output contains directive block"
-                    if _directive_present(latest_text)
-                    else "assistant output missing directive block"
-                )
+    latest_text = ""
+    last_assistant_message = hook_input.get("last_assistant_message")
+    if isinstance(last_assistant_message, str) and last_assistant_message.strip():
+        latest_text = last_assistant_message
+    if not latest_text:
+        transcript_path_raw = hook_input.get("transcript_path")
+        if transcript_path_raw:
+            transcript_path = Path(str(transcript_path_raw))
+            if transcript_path.exists():
+                latest_text = _extract_latest_assistant_text_from_transcript(transcript_path)
+    if latest_text:
+        _debug_reason(
+            "assistant output contains directive block"
+            if _directive_present(latest_text)
+            else "assistant output missing directive block"
+        )
 
     if decision.should_resume:
         print(
@@ -446,8 +548,8 @@ def _handle_directive_run(loop_state_path: Path, directive_text: str, sleep_enab
 
     save_loop_state(loop_state_path, updated)
 
-    if sleep_enabled and directive.state == "WAIT":
-        time.sleep(directive.wake_after_seconds)
+    if sleep_enabled and updated.get("controller_state") == "WAIT":
+        time.sleep(int(updated["wake_after_seconds"]))
 
     print(json.dumps(updated, indent=2))
     return 0

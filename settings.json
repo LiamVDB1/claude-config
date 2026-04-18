@@ -134,6 +134,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/bash ~/.claude/hooks/ralph-controller-stop-hook.sh"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
