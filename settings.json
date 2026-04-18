@@ -80,9 +80,7 @@
       "Bash(pnpm lint*)",
       "Bash(gh search *)",
       "Bash(node --test *)",
-      "Read(./.env.example)",
-      "Bash(curl * http://localhost:4000/*)",
-      "Bash(curl * http://localhost:4000)"
+      "Read(./.env.example)"
     ],
     "deny": [
       "Read(./.env)",
@@ -91,10 +89,7 @@
       "Read(~/.ssh/**)",
       "Read(~/.aws/**)",
       "Read(~/.config/gh/**)",
-      "Read(~/.npmrc)",
-      "Bash(curl *)",
-      "Bash(wget *)",
-      "Bash(rm -rf *)"
+      "Read(~/.npmrc)"
     ],
     "defaultMode": "auto"
   },

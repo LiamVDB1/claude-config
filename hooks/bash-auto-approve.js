@@ -437,58 +437,63 @@ function parseVerdict(text) {
 // ------------------------------------------------------------------
 // Entry point
 // ------------------------------------------------------------------
+const DEBUG_LOG = path.join(os.homedir(), '.claude', 'hooks', 'lib', '.cache', 'bash-auto-approve.log');
+function dlog(obj) {
+  try {
+    fs.mkdirSync(path.dirname(DEBUG_LOG), { recursive: true });
+    fs.appendFileSync(DEBUG_LOG, JSON.stringify({ t: new Date().toISOString(), ...obj }) + '\n');
+  } catch {}
+}
+
 async function runAsync(rawInput) {
   let input;
   try {
     input = JSON.parse(rawInput);
   } catch {
+    dlog({ stage: 'parse_error' });
     return passthrough();
   }
 
-  if (input.tool_name !== 'Bash') return passthrough();
+  if (input.tool_name !== 'Bash') { dlog({ stage: 'skip_not_bash', tool: input.tool_name }); return passthrough(); }
 
   const cmd = input.tool_input && input.tool_input.command;
-  if (typeof cmd !== 'string' || !cmd.trim()) return passthrough();
+  if (typeof cmd !== 'string' || !cmd.trim()) { dlog({ stage: 'skip_empty' }); return passthrough(); }
 
-  // Permission-mode short-circuits: these modes either approve all, gate
-  // at a higher layer, or explicitly restrict to edits — classifier is
-  // either redundant or out of scope.
   const mode = input.permission_mode;
-  if (mode && SKIP_PERMISSION_MODES.has(mode)) return passthrough();
+  if (mode && SKIP_PERMISSION_MODES.has(mode)) { dlog({ stage: 'skip_mode', mode, cmd: cmd.slice(0, 200) }); return passthrough(); }
 
-  // ECC disable env — legacy compat with the rest of the hook stack.
   if (process.env.ECC_DISABLED_HOOKS && process.env.ECC_DISABLED_HOOKS.split(',').includes('bash-auto-approve')) {
+    dlog({ stage: 'skip_ecc_disabled' });
     return passthrough();
   }
 
-  // Allowlist pre-check: if the command already matches a `Bash(...)` rule
-  // in settings.json, Claude Code will not prompt, so skip the LLM entirely.
-  if (commandMatchesAllowlist(cmd)) return passthrough();
+  if (commandMatchesAllowlist(cmd)) { dlog({ stage: 'skip_allowlisted', cmd: cmd.slice(0, 200) }); return passthrough(); }
 
   let templates, defaults;
-  try {
-    templates = loadTemplates();
-  } catch {
-    return passthrough();
-  }
-  try {
-    defaults = loadDefaults();
-  } catch {
-    return passthrough();
-  }
+  try { templates = loadTemplates(); }
+  catch (e) { dlog({ stage: 'templates_err', err: e.message }); return passthrough(); }
+  try { defaults = loadDefaults(); }
+  catch (e) { dlog({ stage: 'defaults_err', err: e.message }); return passthrough(); }
 
   let systemPrompt;
-  try {
-    systemPrompt = buildSystemPrompt(defaults, templates);
-  } catch {
-    return passthrough();
-  }
+  try { systemPrompt = buildSystemPrompt(defaults, templates); }
+  catch (e) { dlog({ stage: 'build_err', err: e.message }); return passthrough(); }
 
   const transcriptEntries = readTranscript(input.transcript_path);
   const userMessage = buildUserMessage(input, transcriptEntries);
 
+  const t0 = Date.now();
   const text = await postLLM(systemPrompt, userMessage);
   const verdict = parseVerdict(text);
+  dlog({
+    stage: 'llm',
+    mode,
+    cmd: cmd.slice(0, 200),
+    ms: Date.now() - t0,
+    got_text: !!text,
+    text_preview: (text || '').slice(0, 120),
+    verdict
+  });
 
   if (verdict === 'no') {
     return allow('auto-mode classifier: preliminary ALLOW');
