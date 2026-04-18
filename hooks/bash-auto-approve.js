@@ -28,7 +28,94 @@ const LLM_TIMEOUT_MS = 2500;
 const MAX_TRANSCRIPT_ENTRIES = 20;
 const MODEL = 'gpt-5.4-mini';
 
-const SKIP_PERMISSION_MODES = new Set(['bypassPermissions', 'plan', 'acceptEdits']);
+// Only skip the classifier when Claude will never prompt anyway.
+// `bypassPermissions` approves every tool call unconditionally; the LLM is
+// pure waste there. `plan` and `acceptEdits` still prompt for Bash, so the
+// classifier must run in those modes.
+const SKIP_PERMISSION_MODES = new Set(['bypassPermissions']);
+
+const SETTINGS_FILES = [
+  path.join(os.homedir(), '.claude', 'settings.json'),
+  path.join(os.homedir(), '.claude', 'settings.local.json')
+];
+
+// ------------------------------------------------------------------
+// Allowlist pre-check — skip LLM when Claude Code wouldn't prompt anyway
+// ------------------------------------------------------------------
+let allowlistCache = { mtime: 0, patterns: null };
+
+function loadBashAllowlist() {
+  // Aggregate `Bash(...)` rules from ~/.claude/settings.json and
+  // settings.local.json. Re-read when either file's mtime changes.
+  let latestMtime = 0;
+  const sources = [];
+  for (const file of SETTINGS_FILES) {
+    try {
+      const stat = fs.statSync(file);
+      latestMtime = Math.max(latestMtime, stat.mtimeMs);
+      sources.push(file);
+    } catch {
+      // missing file is fine
+    }
+  }
+  if (allowlistCache.patterns && latestMtime === allowlistCache.mtime) {
+    return allowlistCache.patterns;
+  }
+
+  const patterns = [];
+  for (const file of sources) {
+    try {
+      const obj = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const allow = obj && obj.permissions && Array.isArray(obj.permissions.allow)
+        ? obj.permissions.allow
+        : [];
+      for (const rule of allow) {
+        if (typeof rule !== 'string') continue;
+        const m = rule.match(/^Bash\((.+)\)$/);
+        if (!m) continue;
+        patterns.push(m[1]);
+      }
+    } catch {
+      // malformed settings file — ignore
+    }
+  }
+  allowlistCache = { mtime: latestMtime, patterns };
+  return patterns;
+}
+
+function bashPatternToRegex(pattern) {
+  // Claude Code Bash rules are glob-ish. `*` matches any run of characters.
+  // A pattern ending in `*` is treated as a prefix rule (common case:
+  // `Bash(git status *)` should match `git status` and `git status --short`),
+  // so we drop the trailing `*` along with any immediately preceding
+  // whitespace and skip the end-anchor. Patterns without a trailing `*`
+  // must match the whole command.
+  let body = pattern;
+  let anchorEnd = true;
+  const trail = body.match(/\s*\*$/);
+  if (trail) {
+    body = body.slice(0, -trail[0].length);
+    anchorEnd = false;
+  }
+  let re = '';
+  for (const ch of body) {
+    if (ch === '*') re += '.*';
+    else re += ch.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp('^' + re + (anchorEnd ? '$' : '(\\s.*|$)'));
+}
+
+function commandMatchesAllowlist(cmd) {
+  const patterns = loadBashAllowlist();
+  for (const p of patterns) {
+    try {
+      if (bashPatternToRegex(p).test(cmd)) return true;
+    } catch {
+      // skip unparseable pattern
+    }
+  }
+  return false;
+}
 
 // ------------------------------------------------------------------
 // Output helpers
@@ -330,6 +417,10 @@ async function runAsync(rawInput) {
   if (process.env.ECC_DISABLED_HOOKS && process.env.ECC_DISABLED_HOOKS.split(',').includes('bash-auto-approve')) {
     return passthrough();
   }
+
+  // Allowlist pre-check: if the command already matches a `Bash(...)` rule
+  // in settings.json, Claude Code will not prompt, so skip the LLM entirely.
+  if (commandMatchesAllowlist(cmd)) return passthrough();
 
   let templates, defaults;
   try {

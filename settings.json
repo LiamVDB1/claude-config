@@ -14,6 +14,7 @@
     "allow": [
       "Read(~/.claude/ORCHESTRATOR.md)",
       "Read(*)",
+      "Search",
       "Edit",
       "Write",
       "Skill",
@@ -193,7 +194,7 @@
     }
   },
   "sandbox": {
-    "enabled": true,
+    "enabled": false,
     "autoAllowBashIfSandboxed": true,
     "network": {
       "allowUnixSockets": [
