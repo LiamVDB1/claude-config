@@ -13,6 +13,7 @@
   "permissions": {
     "allow": [
       "Read(~/.claude/ORCHESTRATOR.md)",
+      "Read(*)",
       "Edit",
       "Write",
       "Skill",
@@ -74,6 +75,10 @@
       "Bash(colgrep *)",
       "Bash(* --help *)",
       "Bash(* --version)",
+      "Bash(pnpm typecheck*)",
+      "Bash(pnpm lint*)",
+      "Bash(gh search *)",
+      "Bash(node --test *)",
       "Read(./.env.example)",
       "Bash(curl * http://localhost:4000/*)",
       "Bash(curl * http://localhost:4000)"
@@ -94,6 +99,32 @@
   },
   "model": "gpt-5.4",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/run-with-flags.js suggest-compact hooks/suggest-compact.js standard,strict"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/run-with-flags-shell.sh continuous-learning-v2-observe-pre skills/continuous-learning-v2/hooks/observe.sh standard,strict pre",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/run-with-flags.js bash-auto-approve hooks/bash-auto-approve.js minimal,standard,strict"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write|Read",
@@ -114,23 +145,6 @@
           {
             "type": "command",
             "command": "node ~/.claude/hooks/pre-compact.js"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write|Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/hooks/run-with-flags.js suggest-compact hooks/suggest-compact.js standard,strict"
-          },
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/run-with-flags-shell.sh continuous-learning-v2-observe-pre skills/continuous-learning-v2/hooks/observe.sh standard,strict pre",
-            "timeout": 10,
-            "async": true
           }
         ]
       }
