@@ -105,7 +105,14 @@ function bashPatternToRegex(pattern) {
   return new RegExp('^' + re + (anchorEnd ? '$' : '(\\s.*|$)'));
 }
 
+// Shell metacharacters that split a command into multiple segments. If any
+// are present, Claude Code's allowlist matcher will NOT auto-approve based
+// on a single-command rule like `Bash(ls *)`, so we must not short-circuit
+// and must let the LLM classify the full pipeline.
+const COMPOUND_RE = /[|;&<>`\n]|\$\(/;
+
 function commandMatchesAllowlist(cmd) {
+  if (COMPOUND_RE.test(cmd)) return false;
   const patterns = loadBashAllowlist();
   for (const p of patterns) {
     try {
