@@ -315,10 +315,46 @@ function buildUserMessage(input, transcriptEntries) {
 // ------------------------------------------------------------------
 // LiteLLM call
 // ------------------------------------------------------------------
+const LITELLM_ENV_PATH = path.join(os.homedir(), '.claude', 'litellm.env');
+const DEFAULT_LITELLM_BASE = 'https://litellm.juphorizon.com';
+
+function readLitellmEnvFile() {
+  // Parse ~/.claude/litellm.env into a map. Supports bare `K=V`, `export K=V`,
+  // quoted values, and `#` comments. Claude Code does not source this file
+  // for hook subprocesses, so the hook must load it itself.
+  try {
+    const raw = fs.readFileSync(LITELLM_ENV_PATH, 'utf8');
+    const out = {};
+    for (const line of raw.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const m = trimmed.match(/^(?:export\s+)?([A-Z_][A-Z0-9_]*)\s*=\s*(.*)$/);
+      if (!m) continue;
+      let val = m[2].trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      out[m[1]] = val;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function resolveLitellmCreds() {
+  const envFile = readLitellmEnvFile();
+  const base =
+    process.env.HYBRID_LITELLM_BASE_URL ||
+    envFile.HYBRID_LITELLM_BASE_URL ||
+    DEFAULT_LITELLM_BASE;
+  const key = process.env.LITELLM_API_KEY || envFile.LITELLM_API_KEY || '';
+  return { base, key };
+}
+
 function postLLM(systemPrompt, userMessage) {
   return new Promise(resolve => {
-    const base = process.env.HYBRID_LITELLM_BASE_URL;
-    const key = process.env.LITELLM_API_KEY;
+    const { base, key } = resolveLitellmCreds();
     if (!base || !key) return resolve(null);
 
     let urlObj;
