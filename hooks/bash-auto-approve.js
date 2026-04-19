@@ -29,10 +29,12 @@ const MAX_TRANSCRIPT_ENTRIES = 20;
 const MODEL = 'gpt-5.4-mini';
 
 // Only skip the classifier when Claude will never prompt anyway.
-// `bypassPermissions` approves every tool call unconditionally; the LLM is
-// pure waste there. `plan` and `acceptEdits` still prompt for Bash, so the
-// classifier must run in those modes.
-const SKIP_PERMISSION_MODES = new Set(['bypassPermissions']);
+// - `bypassPermissions`: approves every tool call unconditionally.
+// - `auto`: Claude Code's native auto-mode is already classifying; running
+//   our LLM on top of it would double-bill and add latency for no benefit.
+// `plan` and `acceptEdits` still prompt for Bash, so the classifier must
+// run in those modes.
+const SKIP_PERMISSION_MODES = new Set(['bypassPermissions', 'auto']);
 
 const SETTINGS_FILES = [
   path.join(os.homedir(), '.claude', 'settings.json'),
@@ -206,12 +208,12 @@ function applyXmlRewrite(prompt) {
   // Claude Code's tl1() swap: replace the tool-call closer with XML
   // output instructions so gpt-5.4-mini can respond with <block>yes|no</block>.
   const xmlInstructions = [
-    'Respond with XML in this exact format — nothing else, no prose, no markdown:',
-    '<reasoning>one short sentence</reasoning>',
-    '<block>yes</block>',
-    'or',
-    '<block>no</block>',
+    'Respond with XML in exactly this order and format. No prose before, no markdown, no extra tags:',
+    '<reasoning>one short sentence explaining the key factor</reasoning>',
+    '<block>yes</block>  (if BLOCKED)',
+    '<block>no</block>   (if ALLOWED)',
     '',
+    'You MUST open with <reasoning> first — the reasoning tag is required, not optional.',
     'Emit <block>no</block> when the action is ALLOWED (preliminary ALLOW with no user-boundary override, or preliminary BLOCK overridden by explicit user authorization).',
     'Emit <block>yes</block> when the action is BLOCKED.',
     'Stop immediately after </block>.'
@@ -437,11 +439,26 @@ function parseVerdict(text) {
 // ------------------------------------------------------------------
 // Entry point
 // ------------------------------------------------------------------
+// Rolling JSONL decision log. Capped at LOG_MAX lines. When the file
+// exceeds LOG_MAX + LOG_SLACK, we rewrite it keeping only the last LOG_MAX
+// entries, so growth is bounded without rewriting on every call.
 const DEBUG_LOG = path.join(os.homedir(), '.claude', 'hooks', 'lib', '.cache', 'bash-auto-approve.log');
+const LOG_MAX = 100;
+const LOG_SLACK = 50;
+
 function dlog(obj) {
   try {
     fs.mkdirSync(path.dirname(DEBUG_LOG), { recursive: true });
     fs.appendFileSync(DEBUG_LOG, JSON.stringify({ t: new Date().toISOString(), ...obj }) + '\n');
+
+    // Cheap rotation: only scan/rewrite when the file is clearly over cap.
+    const stat = fs.statSync(DEBUG_LOG);
+    if (stat.size < (LOG_MAX + LOG_SLACK) * 256) return;
+    const raw = fs.readFileSync(DEBUG_LOG, 'utf8');
+    const lines = raw.split('\n').filter(Boolean);
+    if (lines.length <= LOG_MAX) return;
+    const trimmed = lines.slice(-LOG_MAX).join('\n') + '\n';
+    fs.writeFileSync(DEBUG_LOG, trimmed);
   } catch {}
 }
 
@@ -485,14 +502,23 @@ async function runAsync(rawInput) {
   const t0 = Date.now();
   const text = await postLLM(systemPrompt, userMessage);
   const verdict = parseVerdict(text);
+  const reasoningMatch = (text || '').match(/<reasoning>([\s\S]*?)<\/reasoning>/i);
+  let reasoning = reasoningMatch ? reasoningMatch[1].trim().slice(0, 240) : null;
+  // Fallback: if the model skipped the reasoning tag, capture any text that
+  // appears before the <block> tag so we still have SOMETHING to look at.
+  if (!reasoning && text) {
+    const before = text.split(/<block>/i)[0].replace(/<\/?reasoning>/gi, '').trim();
+    if (before) reasoning = '[no <reasoning> tag] ' + before.slice(0, 240);
+    else reasoning = '[no reasoning emitted]';
+  }
   dlog({
     stage: 'llm',
     mode,
     cmd: cmd.slice(0, 200),
     ms: Date.now() - t0,
-    got_text: !!text,
-    text_preview: (text || '').slice(0, 120),
-    verdict
+    verdict,
+    decision: verdict === 'no' ? 'allow' : verdict === 'yes' ? 'block' : 'fallthrough',
+    reasoning
   });
 
   if (verdict === 'no') {
