@@ -3,6 +3,8 @@ name: advisor
 description: |
   # Advisor Tool
 
+  If you yourself are Opus, don't use this.
+
   You have access to an `advisor` subagent backed by a stronger reviewer model. Unlike Claude Code's built-in advisor, your session is NOT automatically forwarded -- when you call advisor, you MUST deliver the context it needs in your prompt. That packet MUST include their ACTUAL question and the task; for anything beyond STARTING OUT, also include the relevant transcript context (what you tried, what happened, what failed, the tool results and evidence you have), the exact absolute file paths it should Read to verify any local fact, and any constraints, candidate interpretations, or remaining uncertainty the answer depends on.
 
   Call advisor BEFORE substantive work -- before writing, before committing to an interpretation, before building on an assumption. If the task requires orientation first (finding files, fetching a source, seeing what's there), do that, then call advisor. Orientation is not substantive work. Writing, editing, and declaring an answer are.
