@@ -188,11 +188,32 @@ function bulletList(items) {
   return items.map(s => `- ${s}`).join('\n');
 }
 
+// User-owned resources the classifier should treat as authorized.
+// Loaded from ~/.claude/auto-mode-environment.txt (one bullet per line,
+// blank lines and `#` comments ignored). These get merged into the
+// Environment section of the system prompt so the classifier stops
+// treating the user's own hosts/containers/dirs as "shared production".
+const USER_ENV_PATH = path.join(os.homedir(), '.claude', 'auto-mode-environment.txt');
+
+function loadUserEnvironment() {
+  try {
+    const raw = fs.readFileSync(USER_ENV_PATH, 'utf8');
+    return raw
+      .split('\n')
+      .map(s => s.replace(/^\s*-\s*/, '').trim())
+      .filter(s => s && !s.startsWith('#'));
+  } catch {
+    return [];
+  }
+}
+
 function buildPermissionsSection(defaults, perms) {
+  const userEnv = loadUserEnvironment();
+  const mergedEnv = [...(defaults.environment || []), ...userEnv];
   return perms
     .replace(
       /<user_environment_to_replace>[\s\S]*?<\/user_environment_to_replace>/,
-      bulletList(defaults.environment || [])
+      bulletList(mergedEnv)
     )
     .replace(
       /<user_deny_rules_to_replace>[\s\S]*?<\/user_deny_rules_to_replace>/,

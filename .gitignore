@@ -15,6 +15,7 @@ hybrid/router.log
 .git/
 
 # Runtime state, history, and caches
+hooks/lib/.cache/
 backups/
 cache/
 debug/
