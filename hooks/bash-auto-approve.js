@@ -24,7 +24,7 @@ const PERMS_TEMPLATE_PATH = path.join(LIB_DIR, 'auto-mode-perms-template.txt');
 const CACHE_PATH = path.join(LIB_DIR, '.cache', 'auto-mode-defaults.json');
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
-const LLM_TIMEOUT_MS = 2500;
+const LLM_TIMEOUT_MS = 4000;
 const MAX_TRANSCRIPT_ENTRIES = 20;
 const MODEL = 'gpt-5.4-mini';
 
