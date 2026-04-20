@@ -24,7 +24,7 @@ const PERMS_TEMPLATE_PATH = path.join(LIB_DIR, 'auto-mode-perms-template.txt');
 const CACHE_PATH = path.join(LIB_DIR, '.cache', 'auto-mode-defaults.json');
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
-const LLM_TIMEOUT_MS = 4000;
+const LLM_TIMEOUT_MS = 5000;
 const MAX_TRANSCRIPT_ENTRIES = 20;
 const MODEL = 'gpt-5.4-mini';
 
@@ -375,7 +375,10 @@ function resolveLitellmCreds() {
   return { base, key };
 }
 
-function postLLM(systemPrompt, userMessage) {
+// Sentinel so the retry wrapper can tell "timed out" apart from "hard fail".
+const TIMEOUT_SENTINEL = Symbol('llm_timeout');
+
+function postLLMOnce(systemPrompt, userMessage) {
   return new Promise(resolve => {
     const { base, key } = resolveLitellmCreds();
     if (!base || !key) return resolve(null);
@@ -399,6 +402,9 @@ function postLLM(systemPrompt, userMessage) {
       stop: ['</block>']
     });
 
+    let settled = false;
+    const done = v => { if (!settled) { settled = true; resolve(v); } };
+
     const req = https.request(
       {
         method: 'POST',
@@ -419,18 +425,18 @@ function postLLM(systemPrompt, userMessage) {
           data += chunk;
           if (data.length > 64 * 1024) {
             req.destroy();
-            resolve(null);
+            done(null);
           }
         });
         res.on('end', () => {
-          if (res.statusCode !== 200) return resolve(null);
+          if (res.statusCode !== 200) return done(null);
           try {
             const j = JSON.parse(data);
             const text =
               j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
-            resolve(typeof text === 'string' ? text : null);
+            done(typeof text === 'string' ? text : null);
           } catch {
-            resolve(null);
+            done(null);
           }
         });
       }
@@ -438,12 +444,33 @@ function postLLM(systemPrompt, userMessage) {
 
     req.on('timeout', () => {
       req.destroy();
-      resolve(null);
+      done(TIMEOUT_SENTINEL);
     });
-    req.on('error', () => resolve(null));
+    req.on('error', () => done(null));
     req.write(body);
     req.end();
   });
+}
+
+// Retry on timeout only — max 3 attempts total. Non-timeout failures return
+// immediately so we stay fail-fast on real errors (bad creds, 5xx, malformed
+// response) rather than burning 12s on hopeless retries.
+const LLM_MAX_ATTEMPTS = 3;
+
+async function postLLM(systemPrompt, userMessage, stats) {
+  let lastWasTimeout = false;
+  for (let attempt = 1; attempt <= LLM_MAX_ATTEMPTS; attempt++) {
+    const result = await postLLMOnce(systemPrompt, userMessage);
+    if (result === TIMEOUT_SENTINEL) {
+      lastWasTimeout = true;
+      if (stats) stats.timeouts = (stats.timeouts || 0) + 1;
+      continue;
+    }
+    if (stats) stats.attempts = attempt;
+    return result;
+  }
+  if (stats) { stats.attempts = LLM_MAX_ATTEMPTS; stats.final_timeout = lastWasTimeout; }
+  return null;
 }
 
 // ------------------------------------------------------------------
@@ -521,7 +548,8 @@ async function runAsync(rawInput) {
   const userMessage = buildUserMessage(input, transcriptEntries);
 
   const t0 = Date.now();
-  const text = await postLLM(systemPrompt, userMessage);
+  const llmStats = {};
+  const text = await postLLM(systemPrompt, userMessage, llmStats);
   const verdict = parseVerdict(text);
   const reasoningMatch = (text || '').match(/<reasoning>([\s\S]*?)<\/reasoning>/i);
   let reasoning = reasoningMatch ? reasoningMatch[1].trim().slice(0, 240) : null;
@@ -539,6 +567,8 @@ async function runAsync(rawInput) {
     ms: Date.now() - t0,
     verdict,
     decision: verdict === 'no' ? 'allow' : verdict === 'yes' ? 'block' : 'fallthrough',
+    attempts: llmStats.attempts,
+    timeouts: llmStats.timeouts,
     reasoning
   });
 

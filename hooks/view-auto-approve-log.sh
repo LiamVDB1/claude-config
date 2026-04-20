@@ -78,6 +78,12 @@ for raw in sys.stdin:
     bits = [DIM + ts + R, label(decision)]
     if ms is not None: bits.append(DIM + str(ms) + "ms" + R)
     if mode: bits.append(CYAN + "mode=" + mode + R)
+    attempts = r.get("attempts")
+    timeouts = r.get("timeouts")
+    if attempts and attempts > 1:
+        bits.append(YELLOW + "attempts=" + str(attempts) + R)
+    if timeouts:
+        bits.append(YELLOW + "timeouts=" + str(timeouts) + R)
     print("  " + "  ".join(bits))
 
     print(BOLD + "  cmd:" + R)
