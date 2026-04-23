@@ -9,7 +9,7 @@
 #   toggle-agent-models.sh /path/to/proj/.claude  # also toggles that dir's agents
 #   toggle-agent-models.sh /a/.claude /b/.claude  # multiple extra targets
 #
-# Sonnet-tier:  native/sonnet  <-->  litellm/gpt-5.4
+# Sonnet-tier:  native/sonnet  <-->  litellm/gpt-5.5
 # Haiku-tier:   native/haiku   <-->  litellm/gpt-5.4-mini
 # (All other model values are left untouched.)
 
@@ -23,7 +23,7 @@ PROBE=""
 while IFS= read -r -d '' f; do
   model=$(grep -m1 '^model: ' "$f" 2>/dev/null | sed 's/^model: //' || true)
   case "$model" in
-    native/sonnet|native/haiku|litellm/gpt-5.4|litellm/gpt-5.4-mini)
+    native/sonnet|native/haiku|litellm/gpt-5.5|litellm/gpt-5.4-mini)
       PROBE="$f"
       PROBE_MODEL="$model"
       break
@@ -44,11 +44,11 @@ fi
 
 if [[ "$CURRENT" == "native" ]]; then
   TARGET="litellm"
-  SONNET_FROM="native/sonnet";      SONNET_TO="litellm/gpt-5.4"
+  SONNET_FROM="native/sonnet";      SONNET_TO="litellm/gpt-5.5"
   HAIKU_FROM="native/haiku";        HAIKU_TO="litellm/gpt-5.4-mini"
 else
   TARGET="native"
-  SONNET_FROM="litellm/gpt-5.4";       SONNET_TO="native/sonnet"
+  SONNET_FROM="litellm/gpt-5.5";       SONNET_TO="native/sonnet"
   HAIKU_FROM="litellm/gpt-5.4-mini";   HAIKU_TO="native/haiku"
 fi
 
@@ -58,7 +58,7 @@ echo "  haiku-tier:  $HAIKU_FROM  →  $HAIKU_TO"
 echo ""
 
 # Swap model in a single file (frontmatter + $%$model: body tag).
-# The body tag may use either the full "litellm/gpt-5.4" or bare "gpt-5.4" form.
+# The body tag may use either the full "litellm/gpt-5.5" or bare "gpt-5.5" form.
 swap_file() {
   local file="$1"
   local from="$2"

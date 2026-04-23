@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import time
 from dataclasses import dataclass
@@ -23,6 +24,10 @@ TERMINAL_STATES = {"DONE", "HALT", "CANCELLED"}
 START = "<<<RALPH_CONTROLLER_DIRECTIVE>>>"
 END = "<<<END_RALPH_CONTROLLER_DIRECTIVE>>>"
 MARKER_PATH = ".claude/ralph-controller.local.md"
+OVERSEER_SCRIPT_NAME = "overseer.py"
+OVERSEER_DEFAULT_INTERVAL = 15
+OVERSEER_MIN_INTERVAL = 1
+OVERSEER_MAX_INTERVAL = 1000
 
 
 @dataclass(frozen=True)
@@ -261,6 +266,111 @@ def mark_cancelled(loop_state: dict[str, Any], reason: str = "controller cancell
     }
 
 
+def _append_directive_history(
+    local_state: dict[str, Any],
+    iteration: int,
+    controller_state: str,
+    directive: "Directive | None",
+    note: str = "",
+) -> None:
+    """Append one JSONL entry to the rolling directive history file, if configured.
+
+    The overseer reads the last N entries of this file to see "what has the
+    orchestrator been deciding across recent iterations" — previously only the
+    most recent directive (in loop_state.last_directive) was preserved.
+
+    Opt-in: only writes when ``overseer_enabled: true`` on the marker, and
+    respects an optional custom ``overseer_directive_history_file`` path. If
+    neither is present or anything goes wrong, this is a silent no-op so the
+    stop-hook path is never blocked.
+    """
+    try:
+        if local_state.get("overseer_enabled") is not True:
+            return
+        raw_path = local_state.get("overseer_directive_history_file")
+        if isinstance(raw_path, str) and raw_path.strip():
+            history_path = Path(raw_path.strip())
+        else:
+            status_raw = local_state.get("overseer_status_file")
+            if not isinstance(status_raw, str) or not status_raw.strip():
+                return
+            history_path = Path(status_raw.strip()).parent / "OVERSEER_DIRECTIVE_HISTORY.jsonl"
+        if not history_path.is_absolute():
+            project_root_raw = str(local_state.get("project_root") or "").strip()
+            if not project_root_raw:
+                return
+            history_path = Path(project_root_raw) / history_path
+
+        entry: dict[str, Any] = {
+            "iteration": iteration,
+            "ts": int(time.time()),
+            "controller_state": controller_state,
+        }
+        if directive is not None:
+            entry["directive"] = {
+                "STATE": directive.state,
+                "PROGRESS": directive.progress,
+                "WAKE_AFTER_SECONDS": directive.wake_after_seconds,
+                "NEXT_ACTION": directive.next_action,
+            }
+        else:
+            entry["directive"] = None
+        if note:
+            entry["note"] = note
+
+        history_path.parent.mkdir(parents=True, exist_ok=True)
+        with history_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        # Fail-open: never break the stop-hook path because of history logging.
+        pass
+
+
+def _read_overseer_message(local_state: dict[str, Any]) -> str:
+    """Consume-on-read of the overseer message file, if configured.
+
+    Returns an empty string on any failure or when the overseer is not enabled.
+    Never raises — this helper is on the stop-hook path and MUST be fail-open.
+
+    **One-shot transport:** after a successful read, the file is deleted so
+    the message only injects into the very next resume prompt, not every
+    subsequent turn. If the orchestrator ignores a note, the overseer will
+    observe that in its next cycle and write a sharper one; we do not repeat
+    the stale message on every turn until the overseer fires again.
+
+    Relative paths are resolved against `project_root` from local_state; if
+    that is missing, they are rejected rather than silently resolved against
+    cwd, because process cwd on the stop-hook path is not reliable.
+    """
+    try:
+        if local_state.get("overseer_enabled") is not True:
+            return ""
+        raw_message = local_state.get("overseer_message_file")
+        if isinstance(raw_message, str) and raw_message.strip():
+            message_path = Path(raw_message.strip())
+        else:
+            status_raw = local_state.get("overseer_status_file")
+            if not isinstance(status_raw, str) or not status_raw.strip():
+                return ""
+            message_path = Path(status_raw.strip()).parent / "OVERSEER_MESSAGE.md"
+        if not message_path.is_absolute():
+            project_root_raw = str(local_state.get("project_root") or "").strip()
+            if not project_root_raw:
+                return ""
+            message_path = Path(project_root_raw) / message_path
+        if not message_path.exists():
+            return ""
+        text = message_path.read_text(encoding="utf-8", errors="ignore").strip()
+        if text:
+            try:
+                message_path.unlink()
+            except OSError:
+                pass
+        return text
+    except Exception:
+        return ""
+
+
 def build_resume_prompt(local_state: dict[str, Any], directive: Directive | None, loop_state: dict[str, Any]) -> str:
     prompt_file = local_state.get("prompt_file") or "<prompt file>"
     state_file = local_state.get("state_file") or "<state file>"
@@ -273,6 +383,13 @@ def build_resume_prompt(local_state: dict[str, Any], directive: Directive | None
         "Use the instructions below as the active user instruction for this resumed turn.",
         f"Current controller_state: {controller_state} (stagnation={stagnation}).",
     ]
+
+    overseer_message = _read_overseer_message(local_state)
+    if overseer_message:
+        header.append("")
+        header.append("=== OVERSEER NOTE (read and act on this first) ===")
+        header.append(overseer_message)
+        header.append("=== END OVERSEER NOTE ===")
 
     if directive is not None and directive.state == "WAIT":
         header.append(
@@ -378,6 +495,57 @@ def _directive_present(text: str) -> bool:
     return True
 
 
+def _overseer_spawn(
+    local_state: dict[str, Any],
+    iteration: int,
+    project_root: Path,
+    marker_path: Path,
+) -> None:
+    """Fire-and-forget spawn of the sibling overseer.py in a detached child.
+
+    The overseer is opt-in per project via ``overseer_enabled: true`` in the
+    marker file. When the key is absent or not literal True, this is a no-op.
+    All logic (LLM call, file writes, error handling) lives in overseer.py;
+    this function is just the dispatch seam.
+
+    Fail-open: any error is silently swallowed so the stop-hook path continues
+    to build the resume prompt normally.
+    """
+    try:
+        if local_state.get("overseer_enabled") is not True:
+            return
+        try:
+            interval = int(local_state.get("overseer_interval", OVERSEER_DEFAULT_INTERVAL))
+        except (TypeError, ValueError):
+            interval = OVERSEER_DEFAULT_INTERVAL
+        interval = max(OVERSEER_MIN_INTERVAL, min(OVERSEER_MAX_INTERVAL, interval))
+        if iteration <= 0 or iteration % interval != 0:
+            return
+        script_path = Path(__file__).resolve().parent / OVERSEER_SCRIPT_NAME
+        if not script_path.exists():
+            _debug_reason(f"overseer script missing at {script_path}")
+            return
+        python_bin = sys.executable or "python3"
+        marker_arg = marker_path if marker_path.is_absolute() else (project_root / marker_path)
+        subprocess.Popen(
+            [
+                python_bin,
+                str(script_path),
+                "--marker-file",
+                str(marker_arg),
+                "--iteration",
+                str(iteration),
+            ],
+            cwd=str(project_root),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except Exception as exc:  # pragma: no cover - fail-open guardrail
+        _debug_reason(f"overseer spawn failed: {exc}")
+
+
 def evaluate_stop_hook(marker_path: Path, *, hook_input: dict[str, Any]) -> ResumeDecision:
     local_state = read_local_state(marker_path)
     if local_state is None:
@@ -468,10 +636,25 @@ def evaluate_stop_hook(marker_path: Path, *, hook_input: dict[str, Any]) -> Resu
     local_state_updated = {**local_state, "iteration": next_iteration}
     write_local_state(marker_path, local_state_updated)
 
+    _append_directive_history(
+        local_state_updated,
+        next_iteration,
+        str(updated_loop_state.get("controller_state") or "BOOT"),
+        directive,
+        note="" if directive is not None else "no valid directive block",
+    )
+
     if directive is not None and directive.state == "WAIT":
         sleep_for = max(0, min(directive.wake_after_seconds, 300))
         if sleep_for > 0:
             time.sleep(sleep_for)
+
+    overseer_project_root_raw = str(local_state_updated.get("project_root") or "").strip()
+    if overseer_project_root_raw:
+        overseer_project_root = Path(overseer_project_root_raw)
+    else:
+        overseer_project_root = marker_path.resolve().parent.parent
+    _overseer_spawn(local_state_updated, next_iteration, overseer_project_root, marker_path)
 
     system_message = (
         f"🔄 Ralph-controller iteration {next_iteration} "

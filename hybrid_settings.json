@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "ANTHROPIC_CUSTOM_MODEL_OPTION": "gpt-5.4",
-    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GPT-5.4",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION": "gpt-5.5",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GPT-5.5",
     "ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION": "Routed through local hybrid router",
     "ECC_HOOK_PROFILE": "standard"
   },
@@ -88,7 +88,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "gpt-5.4",
+  "model": "gpt-5.5",
   "hooks": {
     "PreToolUse": [
       {

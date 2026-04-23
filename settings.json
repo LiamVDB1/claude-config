@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "ANTHROPIC_CUSTOM_MODEL_OPTION": "gpt-5.4",
-    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GPT-5.4",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION": "gpt-5.5",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GPT-5.5",
     "ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION": "Routed through local hybrid router",
     "CLAUDE_CODE_SUBAGENT_MODEL": "gpt-5.4-mini",
     "ECC_HOOK_PROFILE": "standard"
@@ -14,7 +14,7 @@
     "allow": [
       "Read(~/.claude/ORCHESTRATOR.md)",
       "Read(*)",
-      "Search(*)",
+      "Search",
       "Edit",
       "Write",
       "Skill",
@@ -80,7 +80,9 @@
       "Bash(pnpm lint*)",
       "Bash(gh search *)",
       "Bash(node --test *)",
-      "Read(./.env.example)"
+      "Read(./.env.example)",
+      "Bash(curl * http://localhost:4000/*)",
+      "Bash(curl * http://localhost:4000)"
     ],
     "deny": [
       "Read(./.env)",
@@ -89,7 +91,10 @@
       "Read(~/.ssh/**)",
       "Read(~/.aws/**)",
       "Read(~/.config/gh/**)",
-      "Read(~/.npmrc)"
+      "Read(~/.npmrc)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(rm -rf *)"
     ],
     "defaultMode": "auto"
   },
@@ -162,18 +167,16 @@
   "enabledPlugins": {
     "everything-claude-code@everything-claude-code": false,
     "clangd-lsp@claude-plugins-official": true,
-    "figma@claude-plugins-official": true,
+    "figma@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": true,
     "superpowers@claude-plugins-official": false,
     "code-review@claude-plugins-official": false,
-    "colgrep@lightonai-colgrep": true,
     "huggingface-skills@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": false,
     "ralph-loop@claude-plugins-official": false,
     "claude-md-management@claude-plugins-official": false,
     "claude-code-setup@claude-plugins-official": true,
-    "github@claude-plugins-official": true,
-    "notion@claude-plugins-official": true
+    "github@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "everything-claude-code": {
@@ -212,7 +215,7 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "voice": {
     "enabled": false
   },
@@ -220,5 +223,5 @@
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
   "voiceEnabled": false,
-  "model": "gpt-5.4"
+  "model": "gpt-5.5"
 }
