@@ -92,8 +92,6 @@
       "Read(~/.aws/**)",
       "Read(~/.config/gh/**)",
       "Read(~/.npmrc)",
-      "Bash(curl *)",
-      "Bash(wget *)",
       "Bash(rm -rf *)"
     ],
     "defaultMode": "auto"
@@ -215,13 +213,12 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
   "voice": {
     "enabled": false
   },
   "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
-  "voiceEnabled": false,
-  "model": "gpt-5.5"
+  "voiceEnabled": false
 }
