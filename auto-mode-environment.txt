@@ -1,0 +1,14 @@
+# User-owned resources for the bash-auto-approve classifier.
+# These bullets are appended to the Environment section of the auto-mode
+# system prompt. The classifier then treats actions against them as
+# authorized rather than as "shared production".
+#
+# Format: one bullet per line. `#` comments and blank lines are ignored.
+# Keep entries specific — "all of docker" is too broad; naming the user
+# and host scope is better.
+
+- **User-owned local infrastructure**: All Docker containers, Compose stacks, and local databases running on this machine (macOS host) are the user's personal dev instances. `docker exec`, `docker logs`, `docker compose *`, and direct DB queries against them (psql/mysql/redis-cli) are authorized for both reads and writes. They are NOT shared production.
+- **User-owned remote dev host**: `oserver` (opc@oserver / oracle cloud dev VM at /home/opc/) is the user's personal development host. SSH commands to it, reading `.env` files and configs under `/home/opc/`, `docker exec` into containers there, and direct DB queries are authorized. It is NOT shared production — treat it as equivalent to the local machine.
+- **User-owned personal repos**: Any git repo under `/home/opc/` on oserver or under the user's local home directory is personally owned by the user. Reading `.env`, configs, and session secrets from them is authorized (Standard Credentials style).
+- **Scope expansion authorized**: The user routinely asks the agent to work across multiple personal repos and directories in one session. Navigating to sibling repos or parent directories under the user's home tree is not scope escalation.
+- **Trusted source control orgs**: In addition to the session's starting repo, the following GitHub accounts/orgs are trusted source control — cloning from, pushing to, and reading repos under them is authorized and is NOT data exfiltration: `github.com/LiamVDB1`, `github.com/LiamVDB`, `github.com/SELab-2`. Treat their `git@github.com:…` and `https://github.com/…` remotes as trusted.

@@ -219,6 +219,8 @@
   },
   "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
+  "editorMode": "vim",
+  "verbose": true,
   "skipAutoPermissionPrompt": true,
   "voiceEnabled": false
 }
