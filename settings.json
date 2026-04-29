@@ -215,13 +215,14 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
   "voice": {
     "enabled": false
   },
   "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
+  "editorMode": "vim",
+  "verbose": true,
   "skipAutoPermissionPrompt": true,
-  "voiceEnabled": false,
-  "model": "gpt-5.5"
+  "voiceEnabled": false
 }
