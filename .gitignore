@@ -18,11 +18,14 @@ hybrid/router.log
 hooks/lib/.cache/
 backups/
 cache/
+council-runs/
 debug/
 file-history/
 history.jsonl
 homunculus/
 ide/
+image-cache/
+mcp-needs-auth-cache.json
 metrics/
 paste-cache/
 plans/
@@ -30,11 +33,14 @@ projects/
 session-env/
 sessions/
 shell-snapshots/
+skills/skill-stocktake/results.json
 stats-cache.json
 statsig/
 tasks/
+teams/
 telemetry/
 todos/
+usage-data/
 
 # Local plugin installation state
 plugins/blocklist.json
@@ -50,3 +56,7 @@ plugins/marketplaces/
 
 # OS/editor noise
 .DS_Store
+
+# Personal scratch files
+digest.txt
+*.pdf
