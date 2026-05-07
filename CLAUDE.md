@@ -11,6 +11,8 @@ At conversation start, read `~/.claude/ORCHESTRATOR.md` for the full orchestrati
 3. **Clarify material ambiguity early.** Ask when it changes the outcome. Use `AskFollowupQuestion` — never inline. Don't ask when inference suffices.
 4. **Separate exploration from execution.** Explore first, synthesize, then act on a condensed plan.
 
+Tool use: when calling `Read`, omit optional fields entirely unless needed; never pass empty strings like `pages: ""` — use `pages` only for PDFs with values like `"1-5"`.
+
 ---
 
 ## SecondBrain — personal knowledge vault
