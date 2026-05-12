@@ -11,7 +11,9 @@ At conversation start, read `~/.claude/ORCHESTRATOR.md` for the full orchestrati
 3. **Clarify material ambiguity early.** Ask when it changes the outcome. Use `AskFollowupQuestion` — never inline. Don't ask when inference suffices.
 4. **Separate exploration from execution.** Explore first, synthesize, then act on a condensed plan.
 
-Tool use: when calling `Read`, omit optional fields entirely unless needed; never pass empty strings like `pages: ""` — use `pages` only for PDFs with values like `"1-5"`.
+## Read Tool — Mandatory (CRITICAL)
+
+When calling `Read`, you MUST always provide a syntactically valid, non-empty `pages` value. **Never** omit `pages`, and **never** send `pages: ""`, `pages: null`, or any blank/placeholder value; this runtime can serialize missing `pages` as an empty string, and `Read` fails validation before hooks can intervene. For non-PDF files, set `pages: "1"`; it is valid syntax and ignored by text reads. For PDF files, set `pages` to the actual page or range you intend to read, such as `"1"` or `"1-5"`. For large text files, use concrete `offset` and `limit` values to scope reads.
 
 ---
 
@@ -32,6 +34,17 @@ Tool use: when calling `Read`, omit optional fields entirely unless needed; neve
 - Never delete a wiki page without explicit approval — propose in a lint report.
 
 **Memory vs SecondBrain:** auto-memory (`~/.claude/projects/.../memory/`) is for session-continuity scraps (workflow preferences, model routing, in-flight project state). SecondBrain is for durable, cite-able knowledge about Liam's world. When in doubt about where a fact belongs: if it would make sense to someone reading the wiki cold in six months, it goes in SecondBrain; if it only makes sense mid-workflow, it goes in memory.
+
+---
+
+## Local environment
+
+**Docker runs on a remote server, not locally.** Liam uses a Docker context pointed at `oserver` to keep RAM/CPU off the laptop. Containers and their published ports live on the remote host. Host-side TCP (e.g. `localhost:7234`) is only reachable after opening an SSH tunnel.
+
+- Before any local connection to a containerised service (`psql`, `pytest` against a DB, `truth-engine run-live`, Temporal client), open the tunnel: `tunnel <port>` (shell function over `ssh oserver` with ControlMaster reuse). E.g. `tunnel 7234` for the Truth Engine Postgres, `tunnel 7233` for Temporal.
+- `tunnel` is a Bash function — from a non-interactive shell, invoke as `bash -lc 'tunnel <port>'`.
+- If `psql -h localhost -p <port>` is refused but `docker exec ... psql` works, the container is fine — just open the tunnel.
+- Don't `docker compose up` services that already exist on the remote — they collide with the tunnelled port and fail with "Bind for 0.0.0.0:<port> failed: port is already allocated".
 
 ---
 

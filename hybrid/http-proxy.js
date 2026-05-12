@@ -155,6 +155,10 @@ function stripModelMarker(text) {
   return text.replace(MARKER_REMOVAL_PATTERN, '').trim();
 }
 
+function stripContextWindowSuffix(model) {
+  return model.replace(/^gpt-5\.5\[1m\]$/i, 'gpt-5.5');
+}
+
 function getSystemText(body) {
   if (!body || typeof body !== 'object') return '';
   if (typeof body.system === 'string') return body.system;
@@ -286,7 +290,8 @@ async function forwardLiteLLM(req, res, body, model) {
   }
 
   const upstreamUrl = new URL('/v1/messages', LITELLM_BASE_URL);
-  const payload = JSON.stringify({ ...JSON.parse(body.toString('utf8')), model: model.replace(/^litellm\//i, '') });
+  const upstreamModel = stripContextWindowSuffix(model.replace(/^litellm\//i, ''));
+  const payload = JSON.stringify({ ...JSON.parse(body.toString('utf8')), model: upstreamModel });
   const headers = createHeaders(pickForwardHeaders(req.headers), {
     host: upstreamUrl.host,
     authorization: `Bearer ${token}`,
@@ -336,13 +341,15 @@ async function handleMessages(req, res, body) {
   }
 
   if (model.toLowerCase().startsWith('litellm/')) {
-    logRoutingDecision('REROUTE  ', `model=${model} -> ${model.replace(/^litellm\//i, '')} -> ${LITELLM_BASE_URL}/v1/messages`);
+    const targetModel = stripContextWindowSuffix(model.replace(/^litellm\//i, ''));
+    logRoutingDecision('REROUTE  ', `model=${model} -> ${targetModel} -> ${LITELLM_BASE_URL}/v1/messages`);
     return forwardLiteLLM(req, res, body, model);
   }
 
   if (/^(gpt-|o[1-9]|o[1-9]-|gemini-|deepseek-|llama-|mistral-|mixtral-)/i.test(model)) {
     const litellmModel = `litellm/${model}`;
-    logRoutingDecision('REROUTE  ', `model=${model} -> ${litellmModel.replace(/^litellm\//i, '')} -> ${LITELLM_BASE_URL}/v1/messages`);
+    const targetModel = stripContextWindowSuffix(litellmModel.replace(/^litellm\//i, ''));
+    logRoutingDecision('REROUTE  ', `model=${model} -> ${targetModel} -> ${LITELLM_BASE_URL}/v1/messages`);
     return forwardLiteLLM(req, res, body, litellmModel);
   }
 

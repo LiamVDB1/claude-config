@@ -337,6 +337,38 @@ test('auto-reroutes known model families to LiteLLM', async () => {
   fs.unlinkSync(envFile);
 });
 
+test('strips Claude context suffix before forwarding to LiteLLM', async () => {
+  const seen = [];
+  upstream = await startUpstream((req, res) => {
+    const chunks = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => {
+      seen.push({ body: Buffer.concat(chunks).toString('utf8') });
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+  });
+  const envFile = path.join(os.tmpdir(), `litellm-${process.pid}-${Date.now()}-context.env`);
+  fs.writeFileSync(envFile, 'LITELLM_API_KEY=context-test-key\n', 'utf8');
+  router = await startRouter({
+    HYBRID_LITELLM_BASE_URL: upstream.baseUrl,
+    LITELLM_ENV_PATH: envFile,
+  });
+
+  const response = await request(router.port, {
+    path: '/v1/messages',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'gpt-5.5[1m]', messages: [] }),
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(seen.length, 1);
+  assert.deepEqual(JSON.parse(seen[0].body).model, 'gpt-5.5');
+  const log = fs.readFileSync(routerLogPath, 'utf8');
+  assert.match(log, /REROUTE\s+\| model=gpt-5\.5\[1m\] -> gpt-5\.5 ->/);
+  fs.unlinkSync(envFile);
+});
+
 test('rejects unknown non-native models with 400', async () => {
   router = await startRouter();
 

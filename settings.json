@@ -1,10 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "ANTHROPIC_CUSTOM_MODEL_OPTION": "gpt-5.5",
-    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GPT-5.5",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION": "gpt-5.5[1m]",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GPT-5.5 1M",
     "ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION": "Routed through local hybrid router",
     "CLAUDE_CODE_SUBAGENT_MODEL": "gpt-5.4-mini",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "ECC_HOOK_PROFILE": "standard"
   },
   "attribution": {
@@ -82,7 +83,8 @@
       "Bash(node --test *)",
       "Read(./.env.example)",
       "Bash(curl * http://localhost:4000/*)",
-      "Bash(curl * http://localhost:4000)"
+      "Bash(curl * http://localhost:4000)",
+      "Read(./.env.example)"
     ],
     "deny": [
       "Read(./.env)",
@@ -98,6 +100,15 @@
   },
   "hooks": {
     "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/block-empty-read-pages.js"
+          }
+        ]
+      },
       {
         "matcher": "Edit|Write|Read",
         "hooks": [
@@ -215,12 +226,16 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "voice": {
-    "enabled": false
+    "enabled": true,
+    "mode": "hold"
   },
   "autoDreamEnabled": true,
+  "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "vim",
   "verbose": true,
+  "autoCompactEnabled": true,
+  "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "voiceEnabled": false
+  "voiceEnabled": true
 }

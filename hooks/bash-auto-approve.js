@@ -235,8 +235,9 @@ function applyXmlRewrite(prompt) {
     '<block>no</block>   (if ALLOWED)',
     '',
     'You MUST open with <reasoning> first — the reasoning tag is required, not optional.',
+    'Evaluate only <current_action>. Earlier transcript entries are context; they are not the action under review.',
     'Emit <block>no</block> when the action is ALLOWED (preliminary ALLOW with no user-boundary override, or preliminary BLOCK overridden by explicit user authorization).',
-    'Emit <block>yes</block> when the action is BLOCKED.',
+    'Emit <block>yes</block> when the current action is a real security risk that must be BLOCKED.',
     'Stop immediately after </block>.'
   ].join('\n');
 
@@ -283,11 +284,11 @@ function summarizeEntry(entry) {
     const content = typeof msg.content === 'string'
       ? msg.content
       : Array.isArray(msg.content)
-        ? msg.content.map(c => c.text || '').filter(Boolean).join('\n')
+        ? msg.content.map(c => c.text || `[${c.type || 'non-text'} user content]`).filter(Boolean).join('\n')
         : '';
     const text = content.slice(0, 600);
     if (!text) return null;
-    return `[user]\n${text}`;
+    return { role: 'user', text: `[user]\n${text}` };
   }
 
   if (role === 'assistant' || msg.role === 'assistant') {
@@ -298,7 +299,7 @@ function summarizeEntry(entry) {
       if (c.type === 'tool_use') parts.push(summarizeToolUse(c));
     }
     if (!parts.length) return null;
-    return `[assistant]\n${parts.join('\n')}`;
+    return { role: 'assistant', text: `[assistant]\n${parts.join('\n')}` };
   }
 
   return null;
@@ -308,18 +309,48 @@ function readTranscript(transcriptPath) {
   if (!transcriptPath || !fs.existsSync(transcriptPath)) return [];
   const raw = fs.readFileSync(transcriptPath, 'utf8');
   const lines = raw.split('\n').filter(Boolean);
-  const tail = lines.slice(-MAX_TRANSCRIPT_ENTRIES * 3);
-  const out = [];
-  for (const line of tail) {
+  const entries = [];
+
+  for (let i = 0; i < lines.length; i++) {
     try {
-      const obj = JSON.parse(line);
+      const obj = JSON.parse(lines[i]);
       const sum = summarizeEntry(obj);
-      if (sum) out.push(sum);
+      if (sum) entries.push({ idx: i, ...sum });
     } catch {
       // skip malformed
     }
   }
-  return out.slice(-MAX_TRANSCRIPT_ENTRIES);
+
+  const selected = new Set(entries.slice(-MAX_TRANSCRIPT_ENTRIES).map(entry => entry.idx));
+  for (const entry of entries.filter(e => e.role === 'user').slice(-3)) {
+    selected.add(entry.idx);
+  }
+
+  const selectedEntries = entries.filter(entry => selected.has(entry.idx));
+  const protectedUserIdx = new Set(entries.filter(e => e.role === 'user').slice(-3).map(entry => entry.idx));
+  while (selectedEntries.length > MAX_TRANSCRIPT_ENTRIES) {
+    const removable = selectedEntries.findIndex(entry => !protectedUserIdx.has(entry.idx));
+    if (removable === -1) break;
+    selected.delete(selectedEntries[removable].idx);
+    selectedEntries.splice(removable, 1);
+  }
+
+  const out = [];
+  let prevIdx = null;
+  for (const entry of selectedEntries) {
+    if (prevIdx !== null && entry.idx > prevIdx + 1) {
+      out.push('[... intervening transcript entries omitted ...]');
+    }
+    out.push(entry.text);
+    prevIdx = entry.idx;
+  }
+
+  while (out.length > MAX_TRANSCRIPT_ENTRIES) {
+    const removable = out.findIndex(item => item === '[... intervening transcript entries omitted ...]');
+    if (removable === -1) break;
+    out.splice(removable, 1);
+  }
+  return out;
 }
 
 function buildUserMessage(input, transcriptEntries) {
@@ -329,9 +360,11 @@ function buildUserMessage(input, transcriptEntries) {
   return [
     '<transcript>',
     history,
+    '</transcript>',
     '',
+    '<current_action>',
     action,
-    '</transcript>'
+    '</current_action>'
   ].join('\n');
 }
 
