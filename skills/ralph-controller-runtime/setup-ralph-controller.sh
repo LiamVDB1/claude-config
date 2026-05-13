@@ -104,6 +104,33 @@ else:
     existing_loop_state = {}
 loop_iteration = int(existing_loop_state.get("iteration", 0) or 0)
 
+# Preserve any existing marker's opt-in extension keys (overseer_*) so that
+# project-level configuration (overseer_enabled, paths, byte caps, etc.) is
+# not silently dropped on every /ralph-controller restart. Only extension
+# keys are carried over — core marker fields (iteration, session_id,
+# max_iterations, ...) are always regenerated from this invocation's flags.
+preserved_extensions = {}
+existing_marker_path = Path(".claude/ralph-controller.local.md")
+if existing_marker_path.exists():
+    marker_text = existing_marker_path.read_text(encoding="utf-8")
+    if marker_text.startswith("---\n"):
+        _, _, rest = marker_text.partition("---\n")
+        fm_block, _, _ = rest.partition("\n---")
+        for raw_line in fm_block.splitlines():
+            if ":" not in raw_line:
+                continue
+            key, _, raw_value = raw_line.partition(":")
+            key = key.strip()
+            if not key.startswith("overseer_"):
+                continue
+            value_str = raw_value.strip()
+            if not value_str:
+                continue
+            try:
+                preserved_extensions[key] = json.loads(value_str)
+            except json.JSONDecodeError:
+                preserved_extensions[key] = value_str
+
 frontmatter = {
     "active": True,
     "controller": "ralph-controller",
@@ -118,6 +145,7 @@ frontmatter = {
     "project_root": project_root,
     "cancelled": False,
     "started_at": started_at_value,
+    **preserved_extensions,
 }
 
 frontmatter_lines = ["---"]

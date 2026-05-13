@@ -232,7 +232,6 @@
   "autoDreamEnabled": true,
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
-  "editorMode": "vim",
   "verbose": true,
   "autoCompactEnabled": true,
   "agentPushNotifEnabled": true,
